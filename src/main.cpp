@@ -9,40 +9,63 @@
 
 #include <Arduino.h>
 #include <main.hpp>
+#include <TaskManager.hpp>
 
-#define speed_monitor  115200                                                       // le port série pour le débug
-const char *filename = "/cardSD.csv";                                               // créee un fichier en format (.csv)
+#define sampling_period 10
+#define speed_monitor  115200  
+#define Vexc 5.0                                                     // le port série pour le débug
+const char *filename = "/cardSD.csv";                              // créee un fichier en format (.csv)
+  
+#define BUTTON_PROTECTOR 34                                        // Button poussoir
+
 
 /*Initialisation des deux BUS SPI de l'ESP32*/
 SPIClass vspi(VSPI);
 SPIClass hspi(HSPI);
 
-InputReaderManager inputReaderManager(1000);                                        // periode d'echantillonage 1 seconde
-
+InputReaderManager inputReaderManager(sampling_period);                            
+InputDevice ads1(&vspi, ADS_1_CS_PIN, ADS_1_DRDY, Vexc);                           // dans cette ligne je dit à l'ADS tu communique avec le bus Vspi et ton chip select est 5 et le DATA ready est 4 et aussi ta tension d'excitation est de 5 volt.
 CardSD myCard(&hspi, SD_PIN, "/measures.csv");                                      // creation de l'objet mycard
+MemoryManager& memoryManager= MemoryManager::getInstance();
+TaskManager taskManager(inputReaderManager, memoryManager);
 
-ADS1256 ads1(&vspi, ADS_1_CS_PIN, ADS_1_DRDY, 5.0);                                 // dans cette ligne je dit à l'ADS tu communique avec le bus Vspi et ton chip select est 5 et le DATA ready est 4 et aussi ta tension d'excitation est de 5 volt.
-// ADS1256 ads2(&vspi, CS_PIN 2, DRDY 2, 5.0);                                      // même chose en cas d'un 2 cartes ADS
+/*void HandlSDButton(){
+    MemoryManager* moi = MemoryManager::getInstance();
+    if(!moi->isProtected()){
+        moi->enableSafeEject();
+        Serial.println("My SD is SAFE");
+    } else {
 
+        moi->resetSafeEject();
+        Serial.println("SD is on writting mode ");
+    }
+}*/
 
-/****************************************************************_Initialisation_***************************************************************************/ 
 void setup() {
     Serial.begin(speed_monitor);
+    /*pinMode(BUTTON_PROTECTOR, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleSDButton, FALLING);*/
     /************************************************Configuration des borches pour les 2 bus spi***********************************************************/
     vspi.begin(VSPI_SCLK, VSPI_MISO, VSPI_MOSI,ADS_1_CS_PIN); 
     hspi.begin(HSPI_SCLK,HSPI_MISO,HSPI_MOSI,SD_PIN);
+    
+    inputReaderManager.addDevice(&ads1);                    // Enregistrement des cartes auprès du Manager _inputReader
 
-    // Enregistrement des cartes auprès du Manager _inputReader
-    inputReaderManager.addDevice(&ads1);                      // On donne la réference d'adresse du capteur ads1 au Manager
-    inputReaderManager.begin();                              //  Le manager initialise l'ADS et crée la tâche FreeRTOS
+    
+    if (myCard.begin()) {
+        memoryManager.addDevice(&myCard);
+        Serial.println("SD OK");
+    }
+    
+    
+    inputReaderManager.begin();
+    memoryManager.begin();    
+    taskManager.begin();
 
-
-
-    //**********************************************************Initialisation de la carte SD***********************************************************************************************/    
-
+    Serial.println("Tâches lancées, attente du remplissage du buffer");
 
 }
 
 void loop() {
-    /********************/
+
 }

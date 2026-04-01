@@ -2,7 +2,7 @@
 /********************************************* Auteur                           : Halim                           ************************************************************/
 /********************************************* Description                      : Configuration ADS1256           ************************************************************/
 /********************************************* Date de création(fr)             : 19/02/2026                      ************************************************************/
-/********************************************* Date de denièrec modification    : 04/03/2026                      ************************************************************/
+/********************************************* Date de denièrec modification    : 25/03/2026                      ************************************************************/
 
 /* Changelog */                                                                                     /* Commentaire Ajouter */
 /*                                                       
@@ -10,6 +10,7 @@
         Version  0.0.1   ----------------------------------------------------------------------->   : L'Ajoute de la deuxième Jauge de contrainte 
         Version  0.0.2   ----------------------------------------------------------------------->   : L'Ajoute de l'equation de calcule de la déformation en unité (1 microstrain = 10^-6)
         Version  0.1.0   ----------------------------------------------------------------------->   : Creation d'un nouveau fichier headers (BUSspi) pour le bus SPI & mise en forme
+        Version  0.1.1   ----------------------------------------------------------------------->   : L'ajout des defines de datasheet ADS1256
         */
 
 /* A noter que les données de configuration de l'ADS1256 sont issus du datasheet -->  copyright © 2025, Texas Instruments Incorporated :: version Last updated 10/2025      */
@@ -51,6 +52,8 @@ Data Visualization: Results are printed to the Serial monitor using a format com
 
 extern SPIClass spiADS;
 // COMMANDES ADS1256----> voir le datasheet pour bien configurer ---- voir le lien ci-dessus 
+
+/**************************************************************Gain**********************************************************/
 #define GAIN_1 0x00                                             // Le gain vaut 1
 #define GAIN_2 0x01                                             // Le gain vaut 2
 #define GAIN_4 0x02                                             // Le gain vaut 4
@@ -58,34 +61,93 @@ extern SPIClass spiADS;
 #define GAIN_16 0x04                                            // Le gain vaut 16
 #define GAIN_32 0x05                                            // Le gain vaut 32
 #define GAIN_64 0x06                                            // Le gain vaut 64
-#define CMD_RREG 0x10                                           // Lire registre interne
+
+
+
+/***************************************************Fréquence d'échantillonage***********************************************************************/
+#define ADS1256_DRATE_30000   0xF0
+#define ADS1256_DRATE_15000   0xE0
+#define ADS1256_DRATE_7500    0xD0
+#define ADS1256_DRATE_3750    0xC0
+#define ADS1256_DRATE_2000    0xB0
+#define ADS1256_DRATE_1000    0xA1
+#define ADS1256_DRATE_500     0x92
+#define ADS1256_DRATE_100     0x82
+#define ADS1256_DRATE_60      0x72
+#define ADS1256_DRATE_50      0x63
+#define ADS1256_DRATE_30      0x53
+#define ADS1256_DRATE_25      0x43
+#define ADS1256_DRATE_15      0x33
+#define ADS1256_DRATE_10      0x23
+#define ADS1256_DRATE_5       0x13
+#define ADS1256_DRATE_2_5     0x03
+
+
+/*********************************************************** MUX CANAL *******************************************************************************/
+#define ADS1256_MUX_AIN0     0x00
+#define ADS1256_MUX_AIN1     0x01
+#define ADS1256_MUX_AIN2     0x02
+#define ADS1256_MUX_AIN3     0x03
+#define ADS1256_MUX_AIN4     0x04
+#define ADS1256_MUX_AIN5     0x05
+#define ADS1256_MUX_AIN6     0x06
+#define ADS1256_MUX_AIN7     0x07
+#define ADS1256_MUX_AINCOM   0x08
+
+
+/****************************************************************Command*******************************************************************************/
+#define CMD_RREG    0x10                                        // Lire registre interne
 #define CMD_WREG    0x50                                        // Écrire registre
 #define CMD_RDATA   0x01                                        // Lire une seule conversion
-#define REG_MUX     0x01                                        // Sélection des entrées AINP et AINN
-#define REG_ADCON   0x02                                        // PGA + Clock + Sensor detect
-#define REG_DRATE   0x03                                        // Data rate (SPS) ----configuration du débit d’échantillonnage -------> 2.5 échantillons/s 
-#define REG_STATUS  0x00
 #define CMD_SYNC    0xFC                                        // Voir dans command definitions sur Datasheet page 34
 #define CMD_WAKEUP  0x00                                        // Pareil page 34
-#define AIN0 0
-#define AIN1 1
-#define AIN2 2
-#define AIN3 3
+
+
+/*****************************************************************Registre******************************************************************************/
+#define REG_MUX     0x01                                        // Sélection des entrées AINP et AINN
+#define REG_ADCON   0x02                                        // PGA + Clock + Sensor detect
+#define ADCON_RESET 0x20
+#define REG_DRATE   0x03                                        // Data rate (SPS) ----configuration du débit d’échantillonnage -------> 2.5 échantillons/s 
+#define REG_STATUS  0x00
+
+
+
+/************************************************************Chip Select & DATA READY********************************************************************/
 #define CS_PIN 5                                               // Broche Chip Select_ADS1256 (active LOW)
 #define DRDY_PIN 4                                              // Broche Data Ready (LOW = conversion prête)
+
+/********************************************************************IO REGISTER*************************************************************************/
+#define ADS1256_IO_DIR_MASK   0xF0
+#define ADS1256_IO_VALUE_MASK 0x0F
+
+/********************************************************* configurer MUX (AINP, AINN)*********************************************************/
+#define ADS1256_MUX_DIFF(pos, neg)   (((pos) << 4) | (neg))
+
+
+
+
+
+
+
+
+
+/***************************************************************ADCON REGISTER BITS*******************************************************************/
 #define ADCON_CLK_OFF 0b0000000                                 // Horloge interne désactivée (rarement utilisé)
 #define ADCON_CLK_DFLT 0b0010000                                // Horloge interne par défaut
 #define ADCON_CLK_DFLT_DEVIDED_BY_2 0b0100000                   // Horloge divisée par 2
 #define ADCON_CLK_DFLT_DEVIDED_BY_4 0b0110000                   // Horloge divisée par 4
 
-//Sensor Detect Current Sources
+
+
+/********************************************************************Sensor Detect Current Sources***************************************************/
 #define ADCON_SDCS_OFF 0b00000000                               // Source de courant désactivée
 #define ADCON_SDCS_0_5_MIC_A 0b00001000                         // 0.5 µA injecté
 #define ADCON_SDCS_2_MIC_A 0b00010000                           // 2 µA injecté
 #define ADCON_SDCS_10_MIC_A 0b00011000                          // 10 µA injecté
 
-const double MAX_VALUE_23_BIT_1 = 0x7FFFFF;                     // Valeur maximale d’un ADC 24 bits signé (2^23 - 1 = 8 388 607)
-const double vref = 2.5;                                        // Tension de référence utilisée ( 2.5V externe ou interne)
-const double Quantum = vref / (double) (MAX_VALUE_23_BIT_1) ;   // Quantum = Vref / (2^23 - 1) ---->  Permet de convertir la valeur brute ADC en tension réelle
+
+#define MAX_VALUE_23_BIT_1 0x7FFFFF                              // Valeur maximale d’un ADC 24 bits signé (2^23 - 1 = 8 388 607)            
+
+
 
 #endif                                                          // Fin protection contre inclusion multiple

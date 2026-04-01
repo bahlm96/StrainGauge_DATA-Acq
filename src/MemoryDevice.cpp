@@ -42,3 +42,18 @@ void CardSD::saveRow(String dataCSVRow) {
         Serial.println("Erreur : Impossible d'ouvrir " + _filename);              // s'il arrive pas à lire la carte SD, affiche donc ce message d'erreur 
     }
 }
+
+void CardSD::saveBuffer(double* buffer, int taille) {
+    if (buffer == nullptr) return;
+    File dataFile = SD.open(_filename, FILE_APPEND);
+    if (dataFile) {
+        for (int i = 0; i < taille; i++) {
+            // Utilisation de println pour chaque valeur du buffer
+            dataFile.println(String(buffer[i], 4));
+        }
+        dataFile.flush();
+        dataFile.close(); 
+    } else {
+        Serial.println("Erreur SD : Impossible d'ouvrir " + _filename);
+    }
+}
