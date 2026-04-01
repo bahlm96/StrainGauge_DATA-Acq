@@ -27,12 +27,13 @@ private:
     uint32_t SPI_Speed;
     const double _vref;
     double _quantum;
-    const double _Vexc;                                                                   // Tension d'excitation
+    const double _Vexc;
+    uint8_t _sampling_period;                                                                   // Tension d'excitation
 
 public:
 
-    InputDevice(SPIClass* spi, uint8_t cs, uint8_t drdy,double Vexc, uint32_t SPI_Speed = 100000);     // Creation d'un contructeur 
-    void ReadInput();
+    InputDevice(SPIClass* spi, uint8_t cs, uint8_t drdy,double Vexc, uint32_t SPI_Speed ,uint8_t sampling_period);     // Creation d'un contructeur 
+    
     void createTask();
     void begin();  
     void sync();                                                                                   // FCT de synchronisation
@@ -45,6 +46,8 @@ public:
     void setChannel(uint8_t pos, uint8_t neg);                                                     
     void writeRegister(uint8_t reg, uint8_t value);                                                // FCT d'écriture dans un registre
     uint8_t getCsPin();
+
+    void setSamplingPeriod(uint8_t sampling_period);
     
     
 };

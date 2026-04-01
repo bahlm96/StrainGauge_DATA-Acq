@@ -14,20 +14,22 @@ void TaskManager::taskWrapper(void* pvParameters) {
 }
 
 void TaskManager::run() {
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    const TickType_t xFrequency = pdMS_TO_TICKS(1000);
+ 
     
     while(true){
 
-        if (_inputReaderManager->isBufferReady()){
-            Serial.println("On envois à la carte\n");
-            Serial.println(millis());
-
-
-        }
-
-
-
         
-        vTaskDelay(1/portTICK_PERIOD_MS);
+
+        if (_inputReaderManager->isBufferReady()){
+            //Serial.println("On envois à la carte\n");
+            //Serial.println(millis());
+            
+        }
+        
+
+        vTaskDelayUntil(&xLastWakeTime,xFrequency);
     }
 }
 // Appelé par InputReaderManager lorsqu'un buffer est plein

@@ -11,8 +11,8 @@
 #include <main.hpp>
 #include <TaskManager.hpp>
 
-#define sampling_period 10
-#define speed_monitor  115200  
+#define SAMPLING_PERIOD 10 
+#define SPEED_MONITOR 115200
 #define Vexc 5.0                                                     // le port série pour le débug
 const char *filename = "/cardSD.csv";                              // créee un fichier en format (.csv)
   
@@ -23,8 +23,8 @@ const char *filename = "/cardSD.csv";                              // créee un 
 SPIClass vspi(VSPI);
 SPIClass hspi(HSPI);
 
-InputReaderManager inputReaderManager(sampling_period);                            
-InputDevice ads1(&vspi, ADS_1_CS_PIN, ADS_1_DRDY, Vexc);                           // dans cette ligne je dit à l'ADS tu communique avec le bus Vspi et ton chip select est 5 et le DATA ready est 4 et aussi ta tension d'excitation est de 5 volt.
+InputReaderManager inputReaderManager(SAMPLING_PERIOD);                            
+InputDevice ads1(&vspi, ADS_1_CS_PIN, ADS_1_DRDY, Vexc,10000, ADS1256_DRATE_500);                           // dans cette ligne je dit à l'ADS tu communique avec le bus Vspi et ton chip select est 5 et le DATA ready est 4 et aussi ta tension d'excitation est de 5 volt.
 CardSD myCard(&hspi, SD_PIN, "/measures.csv");                                      // creation de l'objet mycard
 MemoryManager& memoryManager= MemoryManager::getInstance();
 TaskManager taskManager(inputReaderManager, memoryManager);
@@ -42,7 +42,7 @@ TaskManager taskManager(inputReaderManager, memoryManager);
 }*/
 
 void setup() {
-    Serial.begin(speed_monitor);
+    Serial.begin(SPEED_MONITOR);
     /*pinMode(BUTTON_PROTECTOR, INPUT_PULLUP);
     attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), handleSDButton, FALLING);*/
     /************************************************Configuration des borches pour les 2 bus spi***********************************************************/

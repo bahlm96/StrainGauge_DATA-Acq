@@ -47,7 +47,7 @@ public:
     void begin();                                                                       // initialiser la carte ads connecté
     void addDevice(InputDevice* monADS);                                               // ajoute de la carte ads à la liste _devices
     static void taskWrapper(void *pvParameters);                                        // freeRTOS en c++ pour lire les classes
-    void task();                                                                        // une FCT pour lire les données à l'infini
+   
     void set_sampling_Period(uint32_t value);                                           // FCT pour changer la vitesse de lecture 
     //void NextBuffer();
     void select(int IdADS);
@@ -58,7 +58,7 @@ public:
     int getBufferSize();                                        // Taille fixe du buffer plein    
 
 private:
-    
+    void _run();                                                                        // une FCT pour lire les données à l'infini
     void _switchBuffer();
     
 };
