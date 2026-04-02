@@ -25,7 +25,7 @@ void InputDevice::begin() {
     writeRegister(REG_ADCON,ADCON_RESET);             // Configuration initiale (le buffer et gain PGA à 1)
     setSamplingPeriod(this->_sampling_period);
     //sync();                                           // Après avoir changé de canal, il faut  synchroniser
-}
+}*
 
 void InputDevice::setSamplingPeriod(uint8_t sampling_period){
     writeRegister(REG_DRATE,sampling_period);
@@ -38,7 +38,7 @@ void InputDevice::setChannel(uint8_t in1, uint8_t in2) {
 
 void InputDevice::writeRegister(uint8_t reg, uint8_t value) {
         _spi->transfer(CMD_WREG | reg);               // le CMD_WREG est la commande de base pour l'ecriture combinée avec l'adresse registre(reg)
-        _spi->transfer(0x00);                         // Nombre de registres à écrire, le 0x00 on modifie une seul registre 
+        _spi->transfer(REG_To_Write);                         // Nombre de registres à écrire, le 0x00 on modifie une seul registre 
         _spi->transfer(value);                        // La donnée stocker dans le registre est envoyer
         vTaskDelay(5 / portTICK_PERIOD_MS);
 }
@@ -52,15 +52,15 @@ void InputDevice::sync() {                                // Une fonction pour f
 int32_t InputDevice::readRaw() {                           // Lecture de la valeur brute 24 bits
     while (digitalRead(_drdyPin));                     // Attente que la donnée soit prête                                      // l'ADS est passé à LOW (donc Actif)
     _spi->transfer(CMD_RDATA);                        // communication vers l'ads par l'envoie de Ready DATA
-    vTaskDelay(10 / portTICK_PERIOD_MS);       // Temps de latence voir la datasheet ADS1256
+    vTaskDelay(10 / portTICK_PERIOD_MS);                // Temps de latence voir la datasheet ADS1256
 
     int32_t value = 0;
-    value |= _spi->transfer(0xFF) << 16;               // Lire le première Octet (MSB)
-    value |= _spi->transfer(0xFF) << 8;                // Lire le 2 Octets 
-    value |= _spi->transfer(0xFF);                     // Lire l'octet de poids faible (LSB)
+    value |= _spi->transfer(Masque_BITS) << Read_First_Octets;               
+    value |= _spi->transfer(Masque_BITS) << Read_Second_Octets;                
+    value |= _spi->transfer(Masque_BITS);                     // Lire l'octet de poids faible (LSB)
     
-    if (value & 0x800000) {                            // Extension de signe pour les valeurs négatives (24 bits -> 32 bits)
-        value |= 0xFF000000;
+    if (value & Sign_Of_24_Bit) {                            // Extension de signe pour les valeurs négatives (24 bits -> 32 bits)
+        value |= Extension_Sign_Bit;
     }
     
     return value;                                      // Retourne un entier signé sur 32 bits

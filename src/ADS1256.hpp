@@ -109,7 +109,7 @@ extern SPIClass spiADS;
 #define ADCON_RESET 0x20
 #define REG_DRATE   0x03                                        // Data rate (SPS) ----configuration du débit d’échantillonnage -------> 2.5 échantillons/s 
 #define REG_STATUS  0x00
-
+#define REG_To_Write 0x00
 
 
 /************************************************************Chip Select & DATA READY********************************************************************/
@@ -125,9 +125,11 @@ extern SPIClass spiADS;
 
 
 
+/*****************************************************************Masques***********************************************************************/
 
-
-
+#define Masque_BITS  0xFF
+#define Sign_Of_24_Bit  0x800000
+#define Extension_Sign_Bit 0xFF000000
 
 
 
@@ -147,6 +149,22 @@ extern SPIClass spiADS;
 
 
 #define MAX_VALUE_23_BIT_1 0x7FFFFF                              // Valeur maximale d’un ADC 24 bits signé (2^23 - 1 = 8 388 607)            
+
+/****************************************************************Read 32 Octets On ADS1256 *************************************************************************/
+
+#define Read_First_Octets 16 
+#define Read_Second_Octets 8 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
