@@ -22,7 +22,6 @@
 #define VSPI_MOSI 23                   // l'esp32 communique vers l'ADS
 #define SPI_SPEED 1000000              // vitesse de communication du bus spi par défault
 
-
 #define ADS_1_DRDY   4                 // Broche DATA Ready
 #define ADS_1_CS_PIN 5                 // Borche chip select de l'ads 1256
 

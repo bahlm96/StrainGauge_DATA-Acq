@@ -30,6 +30,7 @@ class InputReaderManager {
 private:
     std::vector<InputDevice*> _devices;                                                // On stocke les adresses de chaque cartes ici dans la variable appelée (_Devices)
     uint32_t _samplingPeriod = 100;
+
     
 /****************************************************************Creation des buffer pour le stockage ************************************************************************/
     double _BufferA[BUFFER_SIZE];

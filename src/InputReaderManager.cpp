@@ -22,7 +22,7 @@ InputReaderManager::InputReaderManager(uint32_t samplingPeriod):
 
 void InputReaderManager::begin() {
     if (_isStarted) return;
-    xTaskCreate(taskWrapper, "ReadyTask", 4096, this, 2, &_taskHandle);
+    xTaskCreate(taskWrapper, "ReadyTask", 8192, this, 2, &_taskHandle);
     _isStarted = true;
     
 }
@@ -35,10 +35,9 @@ double* InputReaderManager::getBufferReady() {
 }
 
 void InputReaderManager::addDevice(InputDevice* device) {                                             // ajouter le pointeur de l'ADS dans un tableau dynamique
-    _devices.push_back(device);
-    device->select();    
+    _devices.push_back(device);  
     device->begin();
-    device->deselect();
+    
 }
 
 
@@ -71,7 +70,7 @@ void InputReaderManager::_run() {
     double value_in_mV =0.0;
     double timestamp= 0.0;
 
-    while (true) {       
+    while (true) {
 
         // Remplissage du buffer actif
         _currentBuffer[_index_buffer]= timestamp;
@@ -83,26 +82,27 @@ void InputReaderManager::_run() {
             _index_buffer = 0;
         }
 
+        
         for (InputDevice* device : _devices) {
-            device->select();
-            for (int i=0; i < 4; i+=2){
-                
-                if (_index_buffer  >= BUFFER_SIZE) {
-                    _switchBuffer();
-                    _bufferReady = true;
-                    _index_buffer = 0;
-                }
-                
+            device->beginTransaction();   
+            for (int i=0 , idcapteur = 1; i <= 7; i+=2,idcapteur++ ){
                 device->setChannel(i, i+1);
-                value_in_mV = device->readRaw() * device->getQuantum();// Lecture brute convertie*/
-
+                value_in_mV = device->readRaw() * device->getQuantum();// Lecture brute convertie
+                Serial.printf(">Jauge %d : %.4f\n", idcapteur, value_in_mV);
+                _currentBuffer[_index_buffer++] = value_in_mV;
+                _index_buffer++;
+                 if (_index_buffer  >= BUFFER_SIZE) {
+                      _switchBuffer();
+                      _bufferReady = true;
+                      _index_buffer = 0;
+                    }
+                /*Serial.printf("Jauge %d = ", idcapteur );
                 _currentBuffer[_index_buffer]= value_in_mV;
-                _index_buffer ++;
-            }
-            device->deselect();
-        }
-
-        Serial.println(millis());
+               */
+            }   
+            device->endTransaction();         
+        }   
+            
         vTaskDelayUntil(&xLastWakeTime,xFrequency);
     }
 }
@@ -120,11 +120,11 @@ void InputReaderManager::_switchBuffer(){
 }
 
 void InputReaderManager::deselect(int IdADS){
-    digitalWrite(_devices[IdADS]->getCsPin(), LOW);
+    digitalWrite(_devices[IdADS]->getCsPin(), HIGH);
 }
 
 void InputReaderManager::select(int IdADS){
-    digitalWrite(_devices[IdADS]->getCsPin(), HIGH);
+    digitalWrite(_devices[IdADS]->getCsPin(), LOW);
 }
 
 
@@ -139,4 +139,4 @@ bool InputReaderManager::isBufferReady() {
 
 int InputReaderManager::getBufferSize() {
     return BUFFER_SIZE;
-};                                         // Taille fixe du buffer plein 
+};                                        

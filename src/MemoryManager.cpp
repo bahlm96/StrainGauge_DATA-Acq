@@ -86,13 +86,13 @@ void MemoryManager::run() {
         if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
 
 
-            /** Une petite protection pour la carte SD**/
+            /** Une petite protection pour la carte SD**
             if(_SafeEject){
                 Serial.println("Mode protection de la carte SD");
                 continue;
-            }
+            }*/
             
-            if (_dataTosave != nullptr && _sizeTosave > 0) {
+            if (_dataTosave != nullptr && _sizeTosave > 0) {       // Si on a une adresse mémoire qu'est n'est pas vide et s'il y a vraiment quelquechose écrit (taille de la donée)
                 Serial.println("MemoryManager: Écriture du buffer sur SD...");
                 
                 // On utilise la méthode optimisée saveBuffer de MemoryDevice

@@ -15,7 +15,7 @@ void TaskManager::taskWrapper(void* pvParameters) {
 
 void TaskManager::run() {
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    const TickType_t xFrequency = pdMS_TO_TICKS(1000);
+    const TickType_t xFrequency = pdMS_TO_TICKS(50);
  
     
     while(true){
@@ -25,6 +25,11 @@ void TaskManager::run() {
         if (_inputReaderManager->isBufferReady()){
             //Serial.println("On envois à la carte\n");
             //Serial.println(millis());
+            double* Ptr =_inputReaderManager->getBufferReady();
+            int Size = _inputReaderManager->getBufferSize();
+
+            
+            _memoryManager->signalBufferReady(Ptr, Size);
             
         }
         
@@ -33,11 +38,11 @@ void TaskManager::run() {
     }
 }
 // Appelé par InputReaderManager lorsqu'un buffer est plein
-bool TaskManager::requestStorage(double* ptr, int size, int id) {
+/*bool TaskManager::requestStorage(double* ptr, int size, int id) {
     //if (id == 1) _isBufferALocked = true;
     //else         _isBufferBLocked = true;
 
     //BufferRequest req = {ptr, size, id};
     //return (xQueueSend(_queue, &req, 0) == pdPASS); 
     return false;
-}
+}*/

@@ -113,7 +113,7 @@ extern SPIClass spiADS;
 
 
 /************************************************************Chip Select & DATA READY********************************************************************/
-#define CS_PIN 5                                               // Broche Chip Select_ADS1256 (active LOW)
+#define CS_PIN 5                                                // Broche Chip Select_ADS1256 (active LOW)
 #define DRDY_PIN 4                                              // Broche Data Ready (LOW = conversion prête)
 
 /********************************************************************IO REGISTER*************************************************************************/

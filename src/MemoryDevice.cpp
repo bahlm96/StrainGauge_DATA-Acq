@@ -27,6 +27,7 @@ bool CardSD::begin() {
         File dataFile = SD.open(_filename, FILE_WRITE);                           // File_Write ouvrire le fichier en écriture 
         if (dataFile) {
             dataFile.println("Time,voltage1,voltage2,deformation1,deformation2"); // écrire le nom des colonnes 
+            dataFile.flush();
             dataFile.close();                                                     // fermer pour le sauvgarde sur la carte SD
         }
     }
@@ -36,7 +37,8 @@ bool CardSD::begin() {
 void CardSD::saveRow(String dataCSVRow) {
     File dataFile = SD.open(_filename, FILE_APPEND);                              // File_Append :ajoute à la fin
     if (dataFile) {
-        dataFile.println(dataCSVRow);                                             // On écrit la ligne de texte reçu
+        dataFile.println(dataCSVRow); 
+        dataFile.flush();                                                        // On écrit la ligne de texte reçu
         dataFile.close();
     } else {
         Serial.println("Erreur : Impossible d'ouvrir " + _filename);              // s'il arrive pas à lire la carte SD, affiche donc ce message d'erreur 

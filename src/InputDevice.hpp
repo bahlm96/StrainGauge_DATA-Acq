@@ -25,28 +25,29 @@ private:
     uint8_t _drdyPin;
     SPIClass* _spi;
     uint32_t SPI_Speed;
+    const double _Vexc;
     const double _vref;
     double _quantum;
-    const double _Vexc;
-    uint8_t _sampling_period;                                                                   // Tension d'excitation
+    uint8_t _sampling_period; 
+    uint8_t _gain = GAIN_1;                                                                 
 
 public:
 
-    InputDevice(SPIClass* spi, uint8_t cs, uint8_t drdy,double Vexc, uint32_t SPI_Speed ,uint8_t sampling_period);     // Creation d'un contructeur 
-    
+    InputDevice(SPIClass* spi, uint8_t cs, uint8_t drdy,double Vexc, uint32_t SPI_Speed, uint8_t sampling_period, uint8_t gain);     // Creation d'un contructeur 
     void createTask();
     void begin();  
-    void sync();                                                                                   // FCT de synchronisation
+    void syncAndWakeup();                                                                          // FCT de synchronisation
     void select();                                                                                 // FCT por mettre ADS à l'écoute (LOW)
     void deselect();                                                                               // FCT pour mettre l'ADS  à l'état (HIGH) inactif
     int32_t readRaw();                                                                             // FCT pour lire la valeur Brute 
+    void beginTransaction();
+    void endTransaction();
     double get_vref();                                                                             // tension de réference pour ADS
     double getQuantum();
-    /*Mettre en privé*/
     void setChannel(uint8_t pos, uint8_t neg);                                                     
     void writeRegister(uint8_t reg, uint8_t value);                                                // FCT d'écriture dans un registre
     uint8_t getCsPin();
-
+    void Set_ADS1256_SPS (uint8_t drate);                                                          // méthode pour la variable SPS fréquence d'échantillonage ADS1256
     void setSamplingPeriod(uint8_t sampling_period);
     
     
