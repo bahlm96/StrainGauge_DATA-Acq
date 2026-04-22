@@ -17,7 +17,7 @@
 #include "ADS1256.hpp"
 
 
-//const double MAX_VALUE_23_BIT_1 = 0x7FFFFF;                     // Valeur maximale d’un ADC 24 bits signé (2^23 - 1 = 8 388 607)
+//const double MAX_VALUE_23_BIT_1 = 0x7FFFFF;                                                      // Valeur maximale d’un ADC 24 bits signé (2^23 - 1 = 8 388 607)
 /************************************************************Creation d'une class propre à l'ADS****************************************************************/
 class InputDevice {                                                                                   
 private:
@@ -29,7 +29,8 @@ private:
     const double _vref;
     double _quantum;
     uint8_t _sampling_period; 
-    uint8_t _gain = GAIN_1;                                                                 
+    uint8_t _gain = GAIN_1; 
+    uint8_t _CurrentDRATEADS1256;                                                                  // Pour la récuperer sur l'interface Web                                                               
 
 public:
 
@@ -49,7 +50,7 @@ public:
     uint8_t getCsPin();
     void Set_ADS1256_SPS (uint8_t drate);                                                          // méthode pour la variable SPS fréquence d'échantillonage ADS1256
     void setSamplingPeriod(uint8_t sampling_period);
-    
+    uint8_t get_ADS1256_SPS(uint8_t drate);
     
 };
 

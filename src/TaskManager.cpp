@@ -23,8 +23,7 @@ void TaskManager::run() {
         
 
         if (_inputReaderManager->isBufferReady()){
-            //Serial.println("On envois à la carte\n");
-            //Serial.println(millis());
+        
             double* Ptr =_inputReaderManager->getBufferReady();
             int Size = _inputReaderManager->getBufferSize();
 

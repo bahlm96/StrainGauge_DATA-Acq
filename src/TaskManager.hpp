@@ -26,7 +26,7 @@ public:
     void begin();
 
 private:
-    bool requestStorage(double* ptr, int size, int id);    
+    //bool requestStorage(double* ptr, int size, int id);    
 };
 
 #endif

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIEBHERR - Dashboard</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header>
+  <div class="logo-bar"></div>
+  <h1>LIEBHERR — InternShip 2026
+    <span>Système d'acquisition embarqué</span>
+    <span>LIEBHERR MINING EQUIPMENT COLMAR SAS</span>
+    <span>Stagiaire : BALA Halim</span>
+  </h1>
+</header>
+
+<main>
+
+  <!-- ── Métriques ──────────────────────────── -->
+  <div class="card">
+    <div class="metric">
+      <div class="metric-accent"></div>
+      <div class="metric-body">
+        <span class="metric-label">Fréquence</span>
+        <div><span class="metric-value" id="sps-val">—</span><span class="metric-unit">SPS</span></div>
+      </div>
+    </div>
+    <div class="metric">
+      <div class="metric-accent"></div>
+      <div class="metric-body">
+        <span class="metric-label">Dernière mesure</span>
+        <div><span class="metric-value" id="volt-val">—</span><span class="metric-unit">mV</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tare / Zérotage ────────────────────── -->
+  <div class="btn-card">
+    <div class="section-title">Tare — Zérotage des jauges</div>
+
+    <button class="btn btn-tare" id="btn-tare" onclick="requestTare()">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <polyline points="19 12 12 19 5 12"/>
+        <line x1="5" y1="5" x2="19" y2="5"/>
+      </svg>
+      <span id="tare-btn-label">Capturer le zéro (Tare)</span>
+    </button>
+
+    <button class="btn btn-reset-tare" id="btn-reset-tare" onclick="resetTare()">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="1 4 1 10 7 10"/>
+        <path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+      </svg>
+      <span>Réinitialiser la tare</span>
+    </button>
+
+    <div class="tare-status-row inactive" id="tare-status-row">
+      <div class="tare-dot" id="tare-dot"></div>
+      <span class="tare-status-text" id="tare-status-text">Aucun zéro capturé — valeurs brutes affichées</span>
+    </div>
+
+    <div class="tare-offsets" id="tare-offsets">
+      <div class="tare-offset-cell" id="off-0">
+        <span class="offset-label">Jauge 1</span>
+        <span class="offset-value" id="off-val-0">—</span>
+        <span class="offset-unit">offset (V)</span>
+      </div>
+      <div class="tare-offset-cell" id="off-1">
+        <span class="offset-label">Jauge 2</span>
+        <span class="offset-value" id="off-val-1">—</span>
+        <span class="offset-unit">offset (V)</span>
+      </div>
+      <div class="tare-offset-cell" id="off-2">
+        <span class="offset-label">Jauge 3</span>
+        <span class="offset-value" id="off-val-2">—</span>
+        <span class="offset-unit">offset (V)</span>
+      </div>
+      <div class="tare-offset-cell" id="off-3">
+        <span class="offset-label">Jauge 4</span>
+        <span class="offset-value" id="off-val-3">—</span>
+        <span class="offset-unit">offset (V)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Contrôle SD ────────────────────────── -->
+  <div class="btn-card">
+    <div class="section-title">Contrôle carte SD</div>
+
+    <button class="btn btn-toggle" id="btn-toggle" onclick="toggleSD()">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="16"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+      <span id="toggle-label">Arrêter l'enregistrement SD</span>
+    </button>
+
+    <div class="sep"></div>
+
+    <button class="btn btn-eject" id="btn-eject" onclick="ejectSD()">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="17 11 12 6 7 11"/>
+        <line x1="12" y1="6" x2="12" y2="18"/>
+        <line x1="5" y1="21" x2="19" y2="21"/>
+      </svg>
+      <span id="eject-label">Éjecter la carte SD</span>
+    </button>
+
+    <div class="led-row">
+      <div class="led" id="led"></div>
+      <span class="led-label" id="led-label">
+        <strong>LED GPIO 26</strong> — écriture en cours
+      </span>
+    </div>
+  </div>
+
+  <!-- ── File Browser ───────────────────────── -->
+  <div class="file-browser">
+    <div class="file-browser-header">
+      <div class="section-title" style="margin:0;">Fichiers sur la carte SD</div>
+      <button class="btn-refresh" id="btn-refresh" onclick="loadFiles()">
+        <svg class="icon" id="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Actualiser
+      </button>
+    </div>
+    <div id="file-list-container">
+      <div class="file-empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+          <polyline points="13 2 13 9 20 9"/>
+        </svg>
+        Chargement des fichiers...
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status-bar">Acquisition active — 192.168.4.1</div>
+
+</main>
+
+<script src="/dashboard.js"></script>
+</body>
+</html>
