@@ -22,7 +22,11 @@ MemoryManager& MemoryManager::getInstance() {
 }
  
 void MemoryManager::begin() {
+<<<<<<< HEAD
     xTaskCreatePinnedToCore(MemoryManager::task, "SDTask", 4096, this, 1, &_sdTaskHandle, 1);
+=======
+    xTaskCreate(MemoryManager::task, "SDTask", 4096, this, 1, &_sdTaskHandle);
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
 }
  
 void MemoryManager::beginAll() {
@@ -57,7 +61,11 @@ void MemoryManager::run() {
     while (1) {
         if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
  
+<<<<<<< HEAD
             /***********************Protection éjection sécurisée **********************/ 
+=======
+            // --- Protection éjection sécurisée ---
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
             if (WifiManager::isSafeEject()) {
                 Serial.println("[SD] Éjection sécurisée active — écriture ignorée.");
                 _dataTosave = nullptr;

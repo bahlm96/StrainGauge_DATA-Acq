@@ -143,7 +143,10 @@ void InputReaderManager::_run() {
 
                 /* 1. Lecture brute → conversion dans l'unité quantum (Volts) */
                 device->setChannel(i, i + 1);
+<<<<<<< HEAD
                 delayMicroseconds(400);   // attendre la fin de la conversion après sync
+=======
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
                 raw_mV = device->readRaw() * device->getQuantum();
 
                 /* 2. Capture de l'offset si tare demandé sur ce cycle */
@@ -200,7 +203,11 @@ void InputReaderManager::_switchBuffer() {
         _fullBufferPtr = _BufferA;
         _currentBuffer = _BufferB;
     } else {
+<<<<<<< HEAD
         _fullBufferPtr = _BufferB;
+=======
+        _fullBufferPtr = _BufferA;
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
         _currentBuffer = _BufferA;
     }
 }

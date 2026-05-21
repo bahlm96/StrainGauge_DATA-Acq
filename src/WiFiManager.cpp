@@ -1,9 +1,15 @@
 #include "WiFiManager.hpp"
+<<<<<<< HEAD
 #include "InputReaderManager.hpp"  
 #include <SD.h>
 
 
 
+=======
+#include "InputReaderManager.hpp"   // définition complète nécessaire pour appeler requestTare() / resetTare()
+#include <SD.h>
+
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
 /* ── Initialisation des variables statiques ──────────────────────────────── */
 float              WifiManager::_currentVoltage      = 0;
 int                WifiManager::_currentSPS          = 0;
@@ -34,7 +40,13 @@ float WifiManager::getValue()             { return _currentVoltage; }
 /* ── begin() — Enregistrement de toutes les routes HTTP ─────────────────── */
 void WifiManager::begin(WebServer& server) {
 
+<<<<<<< HEAD
     /* ── Page principale ────────────────────────────────────────────────── */
+=======
+    /* ── Fichiers statiques LittleFS ────────────────────────────────────── */
+
+    /* index.html */
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
     server.on("/", HTTP_GET, [&server]() {
         if (LittleFS.exists("/index.html")) {
             File f = LittleFS.open("/index.html", "r");
@@ -45,6 +57,33 @@ void WifiManager::begin(WebServer& server) {
         }
     });
 
+<<<<<<< HEAD
+=======
+    /* style.css — envoyé avec le bon Content-Type et un cache de 10 min */
+    server.on("/style.css", HTTP_GET, [&server]() {
+        if (LittleFS.exists("/style.css")) {
+            server.sendHeader("Cache-Control", "public, max-age=600");
+            File f = LittleFS.open("/style.css", "r");
+            server.streamFile(f, "text/css");
+            f.close();
+        } else {
+            server.send(404, "text/plain", "style.css introuvable.");
+        }
+    });
+
+    /* dashboard.js — envoyé avec le bon Content-Type et un cache de 10 min */
+    server.on("/dashboard.js", HTTP_GET, [&server]() {
+        if (LittleFS.exists("/dashboard.js")) {
+            server.sendHeader("Cache-Control", "public, max-age=600");
+            File f = LittleFS.open("/dashboard.js", "r");
+            server.streamFile(f, "application/javascript");
+            f.close();
+        } else {
+            server.send(404, "text/plain", "dashboard.js introuvable.");
+        }
+    });
+
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
 
     /* ── Lecture des valeurs courantes ──────────────────────────────────── */
     server.on("/getSPS", HTTP_GET, [&server]() {

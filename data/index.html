@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LIEBHERR - Dashboard</title>
+<<<<<<< HEAD
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600&display=swap');
 
@@ -322,6 +323,9 @@
   /* ── SEPARATOR ────────────────────────────────── */
   .sep { border-top:1px solid #ECECEC; margin:2px 0; }
 </style>
+=======
+<link rel="stylesheet" href="/style.css">
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
 </head>
 <body>
 
@@ -358,7 +362,10 @@
   <div class="btn-card">
     <div class="section-title">Tare — Zérotage des jauges</div>
 
+<<<<<<< HEAD
     <!-- Bouton Tare principal -->
+=======
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
     <button class="btn btn-tare" id="btn-tare" onclick="requestTare()">
       <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="5" x2="12" y2="19"/>
@@ -368,7 +375,10 @@
       <span id="tare-btn-label">Capturer le zéro (Tare)</span>
     </button>
 
+<<<<<<< HEAD
     <!-- Bouton Reset tare -->
+=======
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
     <button class="btn btn-reset-tare" id="btn-reset-tare" onclick="resetTare()">
       <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="1 4 1 10 7 10"/>
@@ -377,13 +387,19 @@
       <span>Réinitialiser la tare</span>
     </button>
 
+<<<<<<< HEAD
     <!-- Bandeau statut -->
+=======
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
     <div class="tare-status-row inactive" id="tare-status-row">
       <div class="tare-dot" id="tare-dot"></div>
       <span class="tare-status-text" id="tare-status-text">Aucun zéro capturé — valeurs brutes affichées</span>
     </div>
 
+<<<<<<< HEAD
     <!-- Grille des 4 offsets -->
+=======
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
     <div class="tare-offsets" id="tare-offsets">
       <div class="tare-offset-cell" id="off-0">
         <span class="offset-label">Jauge 1</span>
@@ -414,7 +430,13 @@
 
     <button class="btn btn-toggle" id="btn-toggle" onclick="toggleSD()">
       <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+<<<<<<< HEAD
         <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+=======
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="16"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
       </svg>
       <span id="toggle-label">Arrêter l'enregistrement SD</span>
     </button>
@@ -423,7 +445,12 @@
 
     <button class="btn btn-eject" id="btn-eject" onclick="ejectSD()">
       <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+<<<<<<< HEAD
         <polyline points="17 11 12 6 7 11"/><line x1="12" y1="6" x2="12" y2="18"/>
+=======
+        <polyline points="17 11 12 6 7 11"/>
+        <line x1="12" y1="6" x2="12" y2="18"/>
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
         <line x1="5" y1="21" x2="19" y2="21"/>
       </svg>
       <span id="eject-label">Éjecter la carte SD</span>
@@ -464,6 +491,7 @@
 
 </main>
 
+<<<<<<< HEAD
 <script>
   let isRecording = true;
   let isSafe      = false;
@@ -742,5 +770,8 @@
   setInterval(refreshMetrics, 1000);
   setInterval(syncTareStatus,  2000);   /* polling léger pour refléter l'état tare */
 </script>
+=======
+<script src="/dashboard.js"></script>
+>>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
 </body>
 </html>
