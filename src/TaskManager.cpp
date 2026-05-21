@@ -6,7 +6,7 @@ TaskManager::TaskManager(InputReaderManager &inputReaderManager,MemoryManager &m
 }
 
 void TaskManager::begin() {
-    xTaskCreate(taskWrapper, "TaskManagerTask", 4096, this, 2, NULL);
+    xTaskCreatePinnedToCore(taskWrapper, "TaskManagerTask", 4096, this, 2, NULL, 1);
 }
 
 void TaskManager::taskWrapper(void* pvParameters) {
@@ -23,8 +23,7 @@ void TaskManager::run() {
         
 
         if (_inputReaderManager->isBufferReady()){
-            //Serial.println("On envois à la carte\n");
-            //Serial.println(millis());
+        
             double* Ptr =_inputReaderManager->getBufferReady();
             int Size = _inputReaderManager->getBufferSize();
 

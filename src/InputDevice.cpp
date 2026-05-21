@@ -5,11 +5,9 @@
 /********************************************* Fichier                          : InputDevice.cpp                 **********************************************/
 /********************************************* Description                      : Implémentation du driver ADS1256 *********************************************/
 /********************************************* Date de création                 : 03/03/2026                      **********************************************/
-/********************************************* Date de dernière modification    : 04/03/2026                      **********************************************/
+/********************************************* Date de dernière modification    : 21/04/2026                      **********************************************/
 
-/* Ce fichier contient les définitions des méthodes de la classe ADS1256. 
-   Il gère la logique de communication SPI, la configuration des registres 
-   et la récupération des données brutes de conversion 24 bits. */
+
 
 /**************************************************************************************************************************************************************/
 
@@ -19,16 +17,18 @@ InputDevice::InputDevice(SPIClass* spi, uint8_t cs, uint8_t drdy,double Vexc, ui
     pinMode(_csPin, OUTPUT);                          // déclare le chip select commme sortie
     pinMode(_drdyPin, INPUT);                         // la broche DATAReady comme entrée 
     digitalWrite(_csPin, HIGH);                       // chip select Inactif
-    _quantum = _vref / (double) MAX_VALUE_23_BIT_1;
+    _quantum =(2.0 * _vref) / ((double) MAX_VALUE_23_BIT_1);
+    //_quantum =(2.0 * _vref) / (8388607);
  }
 
 void InputDevice::begin() {    
     //writeRegister(REG_ADCON,ADCON_RESET);             // ne marche pas 
     _spi->beginTransaction(SPISettings(SPI_Speed, MSBFIRST, SPI_MODE1));
     select();
-    writeRegister(REG_ADCON, 0x00);   // gain = 1
+    writeRegister(REG_ADCON, _gain);   // gain = 1
     writeRegister(REG_DRATE, this->_sampling_period);
-    writeRegister(REG_MUX,   0x01);   // AIN0+ / AIN1- 
+    //writeRegister(REG_MUX, ADS1256_MUX_AIN0);   //  AIN0+ / AIN0-
+    writeRegister(REG_MUX, ADS1256_MUX_DIFF(0, 1));  // AIN0+ / AIN1-
     
     deselect();
     _spi->endTransaction();
@@ -42,6 +42,11 @@ void InputDevice::setSamplingPeriod(uint8_t sampling_period){
 void InputDevice::setChannel(uint8_t in1, uint8_t in2) {
     writeRegister(REG_MUX, ((in1 << 4) | in2));         // La commande pour le registre MUX est : (Entrée Positive << 4) | Entrée Négative
     syncAndWakeup();
+    uint32_t t = millis();
+    while (digitalRead(_drdyPin) == HIGH) {
+        if ((millis() - t) > 200) break;   // timeout 200ms
+        vTaskDelay(1 / portTICK_PERIOD_MS); // libère le CPU
+    }
     
 
 
@@ -50,7 +55,7 @@ void InputDevice::setChannel(uint8_t in1, uint8_t in2) {
 void InputDevice::writeRegister(uint8_t reg, uint8_t value) {
         select();
         _spi->transfer(CMD_WREG | reg);               // le CMD_WREG est la commande de base pour l'ecriture combinée avec l'adresse registre(reg)
-        _spi->transfer(0x00);                         // Nombre de registres à écrire, le 0x00 on modifie une seul registre 
+        _spi->transfer(REG_To_Write);                         // Nombre de registres à écrire, le 0x00 on modifie une seul registre 
         _spi->transfer(value);                        // La donnée stocker dans le registre est envoyer
         deselect();
 }
@@ -60,20 +65,19 @@ void InputDevice::syncAndWakeup() {                                // Une foncti
   select();
   _spi->transfer(CMD_SYNC);
   delayMicroseconds(5);
+  //vTaskDelay(5/portTICK_PERIOD_MS);
   _spi->transfer(CMD_WAKEUP);
+  //vTaskDelay(5/portTICK_PERIOD_MS);
   delayMicroseconds(5);
   deselect();
     
 }
 
-int32_t InputDevice::readRaw() {                           // Lecture de la valeur brute 24 bits
+int32_t InputDevice::readRaw() {                                   // Lecture de la valeur brute 24 bits
     
-    uint32_t startTime = millis();
     
-    // Attente avec timeout et libération du processeur 
-    while (digitalRead(_drdyPin) == HIGH) 
+    while (digitalRead(_drdyPin) == HIGH);
     select();
-
     _spi->transfer(CMD_RDATA);
     delayMicroseconds(10);
 
@@ -83,12 +87,12 @@ int32_t InputDevice::readRaw() {                           // Lecture de la vale
     value |= (int32_t)_spi->transfer(Masque_BITS);                     // Lire l'octet de poids faible (LSB)
     
     deselect();
-    if (value & Sign_Of_24_Bit) {                            // Extension de signe pour les valeurs négatives (24 bits -> 32 bits)
+    if (value & Sign_Of_24_Bit) {                                   // Extension de signe pour les valeurs négatives (24 bits -> 32 bits)
         value |= Extension_Sign_Bit;
     }
 
-   // while (digitalRead(_drdyPin) != HIGH);                     // Attente que la donnée soi    
-    return value;                                      // Retourne un entier signé sur 32 bits
+   // while (digitalRead(_drdyPin) != HIGH);                       // Attente que la donnée soi    
+    return value;                                                  // Retourne un entier signé sur 32 bits
     
 }
 
@@ -97,7 +101,16 @@ void InputDevice::Set_ADS1256_SPS(uint8_t drate){
     this->syncAndWakeup();
 }
 
-void InputDevice::select() {                          // une fonction pour mettre l'ads à l'etat LOW
+uint8_t InputDevice::get_ADS1256_SPS(uint8_t drate) {
+    _CurrentDRATEADS1256 = drate;
+    writeRegister(REG_DRATE, drate);
+    this->syncAndWakeup();
+    return _CurrentDRATEADS1256;
+}
+
+
+
+void InputDevice::select() {                                      // une fonction pour mettre l'ads à l'etat LOW
     digitalWrite(_csPin, LOW);    
 }
 
@@ -123,11 +136,11 @@ void InputDevice::createTask(){
 
 
 void InputDevice::beginTransaction() {
-    select();
+    
     _spi->beginTransaction(SPISettings(SPI_Speed, MSBFIRST, SPI_MODE1));
 }
 
 void InputDevice::endTransaction() {
     _spi->endTransaction();
-    deselect();
+    
 }

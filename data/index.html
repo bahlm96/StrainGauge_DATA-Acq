@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LIEBHERR - Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --yellow:   #F5C400;
+    --yellow-d: #D4A900;
+    --gray-bg:  #F2F2F2;
+    --white:    #FFFFFF;
+    --text:     #1A1A1A;
+    --text-s:   #555555;
+    --text-t:   #999999;
+    --safe:     #1E9E4E;
+    --safe-d:   #167A3C;
+    --danger:   #D83B2B;
+    --danger-d: #B22E22;
+    --blue:     #1A6BBF;
+    --radius:   10px;
+  }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--gray-bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* ── HEADER ───────────────────────────────────── */
+  header {
+    background: var(--yellow);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+  }
+  .logo-bar { width:6px; height:48px; background:#1A1A1A; border-radius:3px; flex-shrink:0; }
+  header h1 {
+    font-family:'Barlow Condensed',sans-serif;
+    font-size:28px; font-weight:800;
+    letter-spacing:1.5px; text-transform:uppercase;
+    color:#1A1A1A; line-height:1;
+  }
+  header h1 span {
+    display:block; font-size:12px; font-weight:500;
+    letter-spacing:3px; color:#555; margin-top:3px;
+  }
+
+  /* ── LAYOUT ───────────────────────────────────── */
+  main {
+    max-width:520px;
+    margin:40px auto;
+    padding:0 16px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+
+  /* ── CARD ─────────────────────────────────────── */
+  .card {
+    background:var(--white);
+    border-radius:var(--radius);
+    box-shadow:0 2px 12px rgba(0,0,0,0.08);
+    overflow:hidden;
+  }
+
+  /* ── METRIC ROW ───────────────────────────────── */
+  .metric { display:flex; }
+  .metric-accent { width:5px; align-self:stretch; background:var(--yellow); flex-shrink:0; }
+  .metric-body {
+    flex:1; padding:18px 20px;
+    display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid #ECECEC;
+  }
+  .metric:last-child .metric-body { border-bottom:none; }
+  .metric-label { font-size:14px; font-weight:600; color:var(--text-s); letter-spacing:.5px; text-transform:uppercase; }
+  .metric-value { font-family:'Barlow Condensed',sans-serif; font-size:26px; font-weight:700; color:var(--blue); }
+  .metric-unit  { font-size:13px; font-weight:500; color:var(--text-s); margin-left:4px; }
+
+  /* ── SECTION TITLE ────────────────────────────── */
+  .section-title {
+    font-size:11px; font-weight:600;
+    letter-spacing:2px; text-transform:uppercase;
+    color:var(--text-s); margin-bottom:4px;
+  }
+
+  /* ── BTN CARD ─────────────────────────────────── */
+  .btn-card {
+    background:var(--white);
+    border-radius:var(--radius);
+    box-shadow:0 2px 12px rgba(0,0,0,0.08);
+    padding:20px;
+    display:flex; flex-direction:column; gap:12px;
+  }
+
+  /* ── BUTTONS ──────────────────────────────────── */
+  .btn {
+    width:100%; padding:15px 20px; border:none; border-radius:8px;
+    font-family:'Barlow',sans-serif; font-size:15px; font-weight:600;
+    letter-spacing:.4px; cursor:pointer;
+    transition:all .2s ease;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+  }
+  .btn:active { transform:scale(0.98); }
+
+  .btn-toggle         { background:var(--safe); color:#fff; }
+  .btn-toggle:hover   { background:var(--safe-d); }
+  .btn-toggle.stopped { background:var(--danger); }
+  .btn-toggle.stopped:hover { background:var(--danger-d); }
+
+  .btn-eject          { background:#1A1A1A; color:var(--yellow); border:2px solid #1A1A1A; }
+  .btn-eject:hover    { background:#333; border-color:#333; }
+  .btn-eject.safe     { background:var(--safe); color:#fff; border-color:var(--safe); animation:pulse-safe 2s ease-in-out infinite; }
+  .btn-eject.safe:hover { background:var(--safe-d); animation:none; }
+
+  /* ── TARE BUTTONS ─────────────────────────────── */
+  .btn-tare {
+    background: var(--yellow);
+    color: var(--text);
+    border: 2px solid var(--yellow-d);
+  }
+  .btn-tare:hover { background: var(--yellow-d); }
+  .btn-tare.active {
+    background: var(--blue);
+    color: #fff;
+    border-color: #145299;
+  }
+  .btn-tare.active:hover { background: #145299; }
+
+  .btn-reset-tare {
+    background: none;
+    color: var(--text-s);
+    border: 1.5px solid #DEDEDE;
+  }
+  .btn-reset-tare:hover { background: #F5F5F5; border-color:#BBBBBB; }
+
+  @keyframes pulse-safe {
+    0%,100%{ box-shadow:0 0 0 0 rgba(30,158,78,.4); }
+    50%    { box-shadow:0 0 0 8px rgba(30,158,78,0); }
+  }
+  @keyframes pulse-tare {
+    0%,100%{ box-shadow:0 0 0 0 rgba(26,107,191,.35); }
+    50%    { box-shadow:0 0 0 8px rgba(26,107,191,0); }
+  }
+
+  /* ── LED ──────────────────────────────────────── */
+  .led-row {
+    display:flex; align-items:center; gap:10px;
+    padding:10px 14px; background:#F8F8F8;
+    border-radius:8px; border:1px solid #ECECEC;
+  }
+  .led {
+    width:12px; height:12px; border-radius:50%;
+    background:#CCC; flex-shrink:0;
+    transition:background .3s, box-shadow .3s;
+  }
+  .led.on {
+    background:var(--safe);
+    box-shadow:0 0 6px 2px rgba(30,158,78,.5);
+    animation:blink 1.2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.5} }
+  .led-label { font-size:13px; color:var(--text-s); font-weight:500; }
+  .led-label strong { color:var(--text); }
+
+  /* ── TARE OFFSET GRID ─────────────────────────── */
+  .tare-offsets {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .tare-offset-cell {
+    background:#F8F9FB;
+    border:1px solid #E8ECF2;
+    border-radius:8px;
+    padding:10px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  .tare-offset-cell.zeroed {
+    border-color: #C8E6DA;
+    background: #F0FAF5;
+  }
+  .offset-label {
+    font-size:11px; font-weight:600;
+    letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--text-t);
+  }
+  .offset-value {
+    font-family:'Barlow Condensed', sans-serif;
+    font-size:20px; font-weight:700;
+    color:var(--blue);
+  }
+  .offset-value.zeroed { color: var(--safe); }
+  .offset-unit {
+    font-size:11px; color:var(--text-t);
+  }
+
+  /* Bandeau statut tare */
+  .tare-status-row {
+    display:flex; align-items:center; gap:8px;
+    padding:9px 14px;
+    border-radius:8px;
+    background:#F0FAF5;
+    border:1px solid #C8E6DA;
+    transition:all .3s;
+  }
+  .tare-status-row.inactive {
+    background:#F8F8F8;
+    border-color:#ECECEC;
+  }
+  .tare-dot {
+    width:8px; height:8px; border-radius:50%;
+    background:#CCC; flex-shrink:0;
+    transition:background .3s;
+  }
+  .tare-dot.on { background:var(--safe); }
+  .tare-status-text {
+    font-size:13px; font-weight:500;
+    color:var(--text-s);
+  }
+
+  /* ── STATUS BAR ───────────────────────────────── */
+  .status-bar {
+    font-size:11px; color:var(--text-s);
+    text-align:center; letter-spacing:1px;
+    text-transform:uppercase; padding:8px 0 0;
+  }
+
+  /* ── FILE BROWSER ─────────────────────────────── */
+  .file-browser {
+    background:var(--white);
+    border-radius:var(--radius);
+    box-shadow:0 2px 12px rgba(0,0,0,0.08);
+    overflow:hidden;
+  }
+  .file-browser-header {
+    padding:16px 20px 12px;
+    border-bottom:1px solid #ECECEC;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .btn-refresh {
+    background:none; border:1px solid #DEDEDE;
+    border-radius:6px; padding:5px 12px;
+    font-family:'Barlow',sans-serif; font-size:12px;
+    font-weight:600; color:var(--text-s);
+    cursor:pointer; transition:all .15s;
+    display:flex; align-items:center; gap:6px;
+  }
+  .btn-refresh:hover { background:#F0F0F0; border-color:#CCC; }
+  .btn-refresh.spinning svg { animation:spin .6s linear infinite; }
+  @keyframes spin { to{ transform:rotate(360deg); } }
+
+  .file-empty {
+    padding:32px 20px;
+    text-align:center;
+    color:var(--text-t);
+    font-size:13px;
+  }
+  .file-empty svg { display:block; margin:0 auto 10px; opacity:.3; }
+
+  .file-list { list-style:none; }
+  .file-item {
+    display:flex; align-items:center; gap:12px;
+    padding:14px 20px;
+    border-bottom:1px solid #F0F0F0;
+    transition:background .12s;
+  }
+  .file-item:last-child { border-bottom:none; }
+  .file-item:hover { background:#FAFAFA; }
+
+  .file-icon {
+    width:36px; height:36px; border-radius:8px;
+    background:#FFF8E1; border:1px solid #F5C40055;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .file-icon svg { width:18px; height:18px; color:var(--yellow-d); }
+
+  .file-info { flex:1; min-width:0; }
+  .file-name {
+    font-size:14px; font-weight:600; color:var(--text);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .file-size { font-size:12px; color:var(--text-t); margin-top:1px; }
+
+  .file-actions { display:flex; gap:8px; flex-shrink:0; }
+
+  .btn-dl {
+    background:var(--blue); color:#fff;
+    border:none; border-radius:6px;
+    padding:7px 14px; font-family:'Barlow',sans-serif;
+    font-size:12px; font-weight:600; cursor:pointer;
+    transition:all .15s;
+    display:flex; align-items:center; gap:5px;
+    text-decoration:none;
+  }
+  .btn-dl:hover { background:#145299; }
+
+  .btn-del {
+    background:none; color:var(--danger);
+    border:1px solid #F0D0CE; border-radius:6px;
+    padding:7px 12px; font-family:'Barlow',sans-serif;
+    font-size:12px; font-weight:600; cursor:pointer;
+    transition:all .15s;
+    display:flex; align-items:center; gap:5px;
+  }
+  .btn-del:hover { background:#FFF0EE; border-color:var(--danger); }
+
+  .icon    { width:16px; height:16px; flex-shrink:0; }
+  .icon-lg { width:18px; height:18px; flex-shrink:0; }
+
+  /* ── SEPARATOR ────────────────────────────────── */
+  .sep { border-top:1px solid #ECECEC; margin:2px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-bar"></div>
+  <h1>LIEBHERR — InternShip 2026
+    <span>Système d'acquisition embarqué</span>
+    <span>LIEBHERR MINING EQUIPMENT COLMAR SAS</span>
+    <span>Stagiaire : BALA Halim</span>
+  </h1>
+</header>
+
+<main>
+
+  <!-- ── Métriques ──────────────────────────── -->
+  <div class="card">
+    <div class="metric">
+      <div class="metric-accent"></div>
+      <div class="metric-body">
+        <span class="metric-label">Fréquence</span>
+        <div><span class="metric-value" id="sps-val">—</span><span class="metric-unit">SPS</span></div>
+      </div>
+    </div>
+    <div class="metric">
+      <div class="metric-accent"></div>
+      <div class="metric-body">
+        <span class="metric-label">Dernière mesure</span>
+        <div><span class="metric-value" id="volt-val">—</span><span class="metric-unit">mV</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Tare / Zérotage ────────────────────── -->
+  <div class="btn-card">
+    <div class="section-title">Tare — Zérotage des jauges</div>
+
+    <!-- Bouton Tare principal -->
+    <button class="btn btn-tare" id="btn-tare" onclick="requestTare()">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <polyline points="19 12 12 19 5 12"/>
+        <line x1="5" y1="5" x2="19" y2="5"/>
+      </svg>
+      <span id="tare-btn-label">Capturer le zéro (Tare)</span>
+    </button>
+
+    <!-- Bouton Reset tare -->
+    <button class="btn btn-reset-tare" id="btn-reset-tare" onclick="resetTare()">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="1 4 1 10 7 10"/>
+        <path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+      </svg>
+      <span>Réinitialiser la tare</span>
+    </button>
+
+    <!-- Bandeau statut -->
+    <div class="tare-status-row inactive" id="tare-status-row">
+      <div class="tare-dot" id="tare-dot"></div>
+      <span class="tare-status-text" id="tare-status-text">Aucun zéro capturé — valeurs brutes affichées</span>
+    </div>
+
+    <!-- Grille des 4 offsets -->
+    <div class="tare-offsets" id="tare-offsets">
+      <div class="tare-offset-cell" id="off-0">
+        <span class="offset-label">Jauge 1</span>
+        <span class="offset-value" id="off-val-0">—</span>
+        <span class="offset-unit">offset (V)</span>
+      </div>
+      <div class="tare-offset-cell" id="off-1">
+        <span class="offset-label">Jauge 2</span>
+        <span class="offset-value" id="off-val-1">—</span>
+        <span class="offset-unit">offset (V)</span>
+      </div>
+      <div class="tare-offset-cell" id="off-2">
+        <span class="offset-label">Jauge 3</span>
+        <span class="offset-value" id="off-val-2">—</span>
+        <span class="offset-unit">offset (V)</span>
+      </div>
+      <div class="tare-offset-cell" id="off-3">
+        <span class="offset-label">Jauge 4</span>
+        <span class="offset-value" id="off-val-3">—</span>
+        <span class="offset-unit">offset (V)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Contrôle SD ────────────────────────── -->
+  <div class="btn-card">
+    <div class="section-title">Contrôle carte SD</div>
+
+    <button class="btn btn-toggle" id="btn-toggle" onclick="toggleSD()">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+      <span id="toggle-label">Arrêter l'enregistrement SD</span>
+    </button>
+
+    <div class="sep"></div>
+
+    <button class="btn btn-eject" id="btn-eject" onclick="ejectSD()">
+      <svg class="icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="17 11 12 6 7 11"/><line x1="12" y1="6" x2="12" y2="18"/>
+        <line x1="5" y1="21" x2="19" y2="21"/>
+      </svg>
+      <span id="eject-label">Éjecter la carte SD</span>
+    </button>
+
+    <div class="led-row">
+      <div class="led" id="led"></div>
+      <span class="led-label" id="led-label">
+        <strong>LED GPIO 26</strong> — écriture en cours
+      </span>
+    </div>
+  </div>
+
+  <!-- ── File Browser ───────────────────────── -->
+  <div class="file-browser">
+    <div class="file-browser-header">
+      <div class="section-title" style="margin:0;">Fichiers sur la carte SD</div>
+      <button class="btn-refresh" id="btn-refresh" onclick="loadFiles()">
+        <svg class="icon" id="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Actualiser
+      </button>
+    </div>
+    <div id="file-list-container">
+      <div class="file-empty">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+          <polyline points="13 2 13 9 20 9"/>
+        </svg>
+        Chargement des fichiers...
+      </div>
+    </div>
+  </div>
+
+  <div class="status-bar" id="status-bar">Acquisition active — 192.168.4.1</div>
+
+</main>
+
+<script>
+  let isRecording = true;
+  let isSafe      = false;
+  let isTareOn    = false;
+
+  /* ══════════════════════════════════════════════════
+     MÉTRIQUES
+  ══════════════════════════════════════════════════ */
+  function refreshMetrics() {
+    fetch('/getSPS').then(r => r.text()).then(v => {
+      document.getElementById('sps-val').textContent = v || '—';
+    }).catch(() => {});
+
+    fetch('/getVoltage').then(r => r.text()).then(v => {
+      document.getElementById('volt-val').textContent = parseFloat(v).toFixed(4) || '—';
+    }).catch(() => {});
+  }
+
+  /* ══════════════════════════════════════════════════
+     TARE
+  ══════════════════════════════════════════════════ */
+  function requestTare() {
+    const btn   = document.getElementById('btn-tare');
+    const label = document.getElementById('tare-btn-label');
+    btn.disabled = true;
+    label.textContent = 'Capture en cours…';
+
+    fetch('/tare', { method: 'POST' })
+      .then(r => r.json())
+      .then(() => {
+        /* Petite pause pour laisser le firmware capturer l'offset */
+        setTimeout(() => {
+          btn.disabled = false;
+          syncTareStatus();
+        }, 150);
+      })
+      .catch(() => {
+        btn.disabled = false;
+        label.textContent = 'Capturer le zéro (Tare)';
+        alert('Erreur serveur — tare non appliquée.');
+      });
+  }
+
+  function resetTare() {
+    fetch('/resetTare', { method: 'POST' })
+      .then(r => r.json())
+      .then(() => syncTareStatus())
+      .catch(() => alert('Erreur serveur — réinitialisation échouée.'));
+  }
+
+  function syncTareStatus() {
+    fetch('/tareStatus')
+      .then(r => r.json())
+      .then(data => applyTareState(data.active, data.offsets))
+      .catch(() => {});
+  }
+
+  function applyTareState(active, offsets) {
+    isTareOn = active;
+
+    const btn        = document.getElementById('btn-tare');
+    const label      = document.getElementById('tare-btn-label');
+    const statusRow  = document.getElementById('tare-status-row');
+    const dot        = document.getElementById('tare-dot');
+    const statusText = document.getElementById('tare-status-text');
+
+    if (active) {
+      btn.classList.add('active');
+      label.textContent = 'Mettre à jour le zéro';
+      btn.style.animation = 'none';
+
+      statusRow.classList.remove('inactive');
+      dot.classList.add('on');
+      statusText.textContent = 'Tare active — soustraction des offsets en cours';
+
+      /* Mise à jour des 4 cellules offset */
+      offsets.forEach((val, i) => {
+        const cell     = document.getElementById('off-' + i);
+        const valEl    = document.getElementById('off-val-' + i);
+        const isZero   = Math.abs(val) < 1e-9;
+        valEl.textContent = val.toFixed(6);
+        valEl.className   = 'offset-value' + (isZero ? ' zeroed' : '');
+        cell.className    = 'tare-offset-cell' + (isZero ? ' zeroed' : '');
+      });
+
+    } else {
+      btn.classList.remove('active');
+      label.textContent = 'Capturer le zéro (Tare)';
+
+      statusRow.classList.add('inactive');
+      dot.classList.remove('on');
+      statusText.textContent = 'Aucun zéro capturé — valeurs brutes affichées';
+
+      for (let i = 0; i < 4; i++) {
+        document.getElementById('off-val-' + i).textContent = '—';
+        document.getElementById('off-val-' + i).className = 'offset-value';
+        document.getElementById('off-' + i).className = 'tare-offset-cell';
+      }
+    }
+  }
+
+  /* ══════════════════════════════════════════════════
+     TOGGLE SD
+  ══════════════════════════════════════════════════ */
+  function toggleSD() {
+    fetch('/toggleSD', { method: 'POST' }).then(r => r.text()).then(s => {
+      isRecording = (s === 'RECORDING');
+      const btn   = document.getElementById('btn-toggle');
+      const label = document.getElementById('toggle-label');
+      if (isRecording) {
+        btn.classList.remove('stopped');
+        label.textContent = "Arrêter l'enregistrement SD";
+      } else {
+        btn.classList.add('stopped');
+        label.textContent = "Reprendre l'enregistrement SD";
+      }
+    }).catch(() => alert('Erreur serveur.'));
+  }
+
+  /* ══════════════════════════════════════════════════
+     ÉJECTION SÉCURISÉE
+  ══════════════════════════════════════════════════ */
+  function syncEjectStatus() {
+    fetch('/ejectStatus').then(r => r.text()).then(s => {
+      applyEjectState(s === 'SAFE');
+    }).catch(() => {});
+  }
+
+  function ejectSD() {
+    fetch('/ejectSD', { method: 'POST' }).then(r => r.text()).then(s => {
+      applyEjectState(s === 'SAFE');
+    }).catch(() => alert('Erreur serveur.'));
+  }
+
+  function applyEjectState(safe) {
+    isSafe = safe;
+    const btnEject  = document.getElementById('btn-eject');
+    const ejectLbl  = document.getElementById('eject-label');
+    const led       = document.getElementById('led');
+    const ledLabel  = document.getElementById('led-label');
+    const statusBar = document.getElementById('status-bar');
+
+    if (isSafe) {
+      btnEject.classList.add('safe');
+      ejectLbl.textContent = 'Carte safe — cliquez pour reprendre';
+      led.classList.add('on');
+      ledLabel.innerHTML   = '<strong>LED GPIO 26</strong> — ALLUMÉE : carte safe, retirez-la';
+      statusBar.textContent = 'ÉJECTION SÉCURISÉE ACTIVE — écriture SD bloquée';
+      statusBar.style.color = '#1E9E4E';
+    } else {
+      btnEject.classList.remove('safe');
+      ejectLbl.textContent = 'Éjecter la carte SD';
+      led.classList.remove('on');
+      ledLabel.innerHTML   = '<strong>LED GPIO 26</strong> — éteinte : écriture en cours';
+      statusBar.textContent = 'Acquisition active — 192.168.4.1';
+      statusBar.style.color = '';
+    }
+  }
+
+  /* ══════════════════════════════════════════════════
+     FILE BROWSER
+  ══════════════════════════════════════════════════ */
+  function formatSize(bytes) {
+    if (bytes < 1024)    return bytes + ' o';
+    if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' Ko';
+    return (bytes / 1048576).toFixed(2) + ' Mo';
+  }
+
+  function loadFiles() {
+    const btn       = document.getElementById('btn-refresh');
+    const container = document.getElementById('file-list-container');
+    btn.classList.add('spinning');
+
+    fetch('/listFiles').then(r => r.json()).then(files => {
+      btn.classList.remove('spinning');
+      if (files.length === 0) {
+        container.innerHTML = `
+          <div class="file-empty">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+              <polyline points="13 2 13 9 20 9"/>
+            </svg>
+            Aucun fichier .csv sur la carte SD
+          </div>`;
+        return;
+      }
+
+      let html = '<ul class="file-list">';
+      files.forEach(f => {
+        html += `
+          <li class="file-item" id="row-${CSS.escape(f.name)}">
+            <div class="file-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                <polyline points="13 2 13 9 20 9"/>
+                <line x1="8" y1="13" x2="16" y2="13"/>
+                <line x1="8" y1="17" x2="12" y2="17"/>
+              </svg>
+            </div>
+            <div class="file-info">
+              <div class="file-name">${f.name}</div>
+              <div class="file-size">${formatSize(f.size)}</div>
+            </div>
+            <div class="file-actions">
+              <a class="btn-dl" href="/downloadFile?name=${encodeURIComponent(f.name)}" download="${f.name}">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                DL
+              </a>
+              <button class="btn-del" onclick="deleteFile('${f.name}')">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6"/><path d="M14 11v6"/>
+                  <path d="M9 6V4h6v2"/>
+                </svg>
+                Suppr.
+              </button>
+            </div>
+          </li>`;
+      });
+      html += '</ul>';
+      container.innerHTML = html;
+
+    }).catch(() => {
+      btn.classList.remove('spinning');
+      container.innerHTML = `
+        <div class="file-empty">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Erreur — carte SD inaccessible
+        </div>`;
+    });
+  }
+
+  function deleteFile(name) {
+    const formData = new FormData();
+    formData.append('name', name);
+    fetch('/deleteFile', { method: 'POST', body: formData })
+      .then(r => {
+        if (r.status === 403) {
+          alert('Éjection sécurisée active — désactivez-la avant de supprimer.');
+          return;
+        }
+        if (!r.ok) { alert('Erreur lors de la suppression.'); return; }
+        const row = document.getElementById('row-' + CSS.escape(name));
+        if (row) {
+          row.style.transition = 'opacity .25s, max-height .3s';
+          row.style.opacity    = '0';
+          row.style.maxHeight  = '0';
+          row.style.overflow   = 'hidden';
+          setTimeout(() => {
+            row.remove();
+            const ul = document.querySelector('.file-list');
+            if (ul && ul.children.length === 0) loadFiles();
+          }, 320);
+        }
+      })
+      .catch(() => alert('Erreur serveur.'));
+  }
+
+  /* ══════════════════════════════════════════════════
+     INIT
+  ══════════════════════════════════════════════════ */
+  syncEjectStatus();
+  syncTareStatus();
+  refreshMetrics();
+  loadFiles();
+
+  setInterval(refreshMetrics, 1000);
+  setInterval(syncTareStatus,  2000);   /* polling léger pour refléter l'état tare */
+</script>
+</body>
+</html>
