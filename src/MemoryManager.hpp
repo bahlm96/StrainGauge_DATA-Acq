@@ -14,7 +14,7 @@
 #define MEMORYMANAGER_HPP
 #include <Arduino.h>
 #include <vector>
-#include <mutex>
+#include <freertos/semphr.h>
 #include <MemoryDevice.hpp>
 
 
@@ -23,24 +23,25 @@
 class MemoryManager { 
 private:
     static MemoryManager* _instance;
-    std::vector<CardSD*> _devices;                                    // La liste des cartes SD connectées
+    std::vector<CardSD*> _devices;
     TaskHandle_t _sdTaskHandle = NULL;
-    //volatile bool _SafeEject = false;                                 // Flag pour stopper l'écriture
     double* _dataTosave = nullptr;
     int _sizeTosave = 0;
-    MemoryManager();                                            // Constructeur privé pour faire un singleton
+    SemaphoreHandle_t _sdMutex = nullptr;
+    MemoryManager();
     
 
 public:
     
-    static MemoryManager& getInstance();                              // garantir qu'une seule et unique instance de la classe MemoryManager existe dans toute la mémoire de l'ESP32.
-    static void task(void *pvParameters);                             // une tâche FreeRTOS pour la carte SD
-    void addDevice(CardSD* myCard);                                   // Enregistrer une nouvelle carte SD
-    void signalBufferReady(double* bufferWrite, int taille);               // Cette méthode qui sera appellé par le TASKMANAGER
-    void beginAll();                                                  // Allumer toutes les cartes SD de la liste
-    void writeToAll(String row);                                      // Écrire une ligne sur toutes les cartes
-    void begin();                                                     // Initialisation de la carte SD
+    static MemoryManager& getInstance();
+    static void task(void *pvParameters);
+    void addDevice(CardSD* myCard);
+    void signalBufferReady(double* bufferWrite, int taille);
+    void beginAll();
+    void writeToAll(String row);
+    void begin();
     void run();
+    void setSdMutex(SemaphoreHandle_t m) { _sdMutex = m; }
     //void enableSafeEject(){_SafeEject = true;};                        // pour bloquer l'écriture
     /*void resetSafeEject(){
         _SafeEject = false;

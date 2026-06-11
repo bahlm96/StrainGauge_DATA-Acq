@@ -25,6 +25,10 @@
 #define ADS_1_DRDY   4                 // Broche DATA Ready
 #define ADS_1_CS_PIN 27                 // Borche chip select de l'ads 1256
 
+/************************** Bouton physique (ButtonManager) ******************/
+
+#define BTN_PIN  15
+
 //extern SPIClass vspi;                 // éviter de crée un bus spi plusieurs fois de suite, externe pour dire que le bus est déja crée dans un autre fichier ailleur
 
 /************************** BUS HSPI Carte  **********************************************/

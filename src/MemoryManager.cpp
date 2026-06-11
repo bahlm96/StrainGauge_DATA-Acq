@@ -1,44 +1,32 @@
 /**************************************************************************************************************************************************************/
 /********************************************* Auteur                           : Halim BALA                       ********************************************/
-/********************************************* Fichier                          : MemoryManager.cpp                 ********************************************/
-/********************************************* Description                      : Manager les cartes mémoires SD *****************************************/
-/********************************************* Date de création(fr)             : 03/03/2026                      *********************************************/
-/********************************************* Date de dernière modification    : 16/04/2026                      *********************************************/
-
-/***********Son rôle est de manager plusieurs cartes mémoires SD *******************************************************************************/
-
-
+/********************************************* Fichier                          : MemoryManager.cpp                 *******************************************/
+/********************************************* Date de dernière modification    : 02/06/2026                      *********************************************/
 
 #include <MemoryManager.hpp>
-#include "WiFiManager.hpp"   
- 
+#include "WiFiManager.hpp"
+
 MemoryManager* MemoryManager::_instance = nullptr;
- 
+
 MemoryManager::MemoryManager() {}
- 
+
 MemoryManager& MemoryManager::getInstance() {
     static MemoryManager instance;
     return instance;
 }
- 
+
 void MemoryManager::begin() {
-<<<<<<< HEAD
+    // Exécution forcée sur le Cœur 1 pour ne pas perturber le Wi-Fi (Cœur 0)
     xTaskCreatePinnedToCore(MemoryManager::task, "SDTask", 4096, this, 1, &_sdTaskHandle, 1);
-=======
-    xTaskCreate(MemoryManager::task, "SDTask", 4096, this, 1, &_sdTaskHandle);
->>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
 }
- 
+
 void MemoryManager::beginAll() {
+    uint8_t mask = WifiManager::getSensorMask();
     for (CardSD* card : _devices) {
-        if (card->begin()) {
-            Serial.println("Stockage : Carte SD initialisée avec succès.");
-        } else {
-            Serial.println("Stockage : Échec initialisation carte SD.");
-        }
+        card->begin(mask);
     }
 }
- 
+
 void MemoryManager::signalBufferReady(double* buffer, int taille) {
     _dataTosave = buffer;
     _sizeTosave = taille;
@@ -46,46 +34,49 @@ void MemoryManager::signalBufferReady(double* buffer, int taille) {
         xTaskNotifyGive(_sdTaskHandle);
     }
 }
- 
+
 void MemoryManager::addDevice(CardSD* myCard) {
     _devices.push_back(myCard);
 }
- 
+
 void MemoryManager::task(void* pvParameters) {
     ((MemoryManager*)pvParameters)->run();
 }
- 
+
 void MemoryManager::run() {
     this->beginAll();
- 
+
     while (1) {
         if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
- 
-<<<<<<< HEAD
-            /***********************Protection éjection sécurisée **********************/ 
-=======
-            // --- Protection éjection sécurisée ---
->>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
+
             if (WifiManager::isSafeEject()) {
-                Serial.println("[SD] Éjection sécurisée active — écriture ignorée.");
                 _dataTosave = nullptr;
                 _sizeTosave = 0;
-                continue;   // Ne pas écrire, attendre la prochaine notification
+                continue;
             }
- 
+
             if (_dataTosave != nullptr && _sizeTosave > 0) {
-                Serial.println("MemoryManager: Écriture du buffer sur SD...");
-                for (CardSD* card : _devices) {
-                    card->saveBuffer(_dataTosave, _sizeTosave);
+
+                bool gotMutex = false;
+                if (_sdMutex) {
+                    gotMutex = (xSemaphoreTake(_sdMutex, pdMS_TO_TICKS(1000)) == pdTRUE);
                 }
-                Serial.println("MemoryManager: Fin d'écriture.");
+
+                if (gotMutex) {
+                    for (CardSD* card : _devices) {
+                        // C'est ici que votre fonction saveBuffer reçoit l'adresse du bloc complet de données stables
+                        card->saveBuffer(_dataTosave, _sizeTosave);
+                    }
+                    if (_sdMutex) xSemaphoreGive(_sdMutex);
+                }
+
                 _dataTosave = nullptr;
                 _sizeTosave = 0;
             }
         }
     }
 }
- 
+
 void MemoryManager::writeToAll(String row) {
     for (CardSD* card : _devices) {
         card->saveRow(row);

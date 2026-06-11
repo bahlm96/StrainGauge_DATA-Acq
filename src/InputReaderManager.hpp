@@ -3,11 +3,9 @@
 /********************************************* Fichier                          : InputReaderManager.hpp           ************************************************************/
 /********************************************* Description                      : Déclaration de la classe         ***********************************************************/
 /********************************************* Date de création(fr)             : 04/03/2026                      ************************************************************/
-/********************************************* Date de dernière modification    : 21/04/2026                      ************************************************************/
+/********************************************* Date de dernière modification    : 05/06/2026                      ************************************************************/
 
-/* Changelog :
-    v0.2.0  --> Ajout du système de Tare / Zérotage par voie (requestTare, resetTare, getOffsets)
-*/
+
 
 #ifndef INPUTREADERMANAGER_HPP
 #define INPUTREADERMANAGER_HPP
@@ -35,21 +33,26 @@ private:
     /************************************************************Double buffer pour le stockage ***************************************************************************/
     double _BufferA[BUFFER_SIZE];
     double _BufferB[BUFFER_SIZE];
-    double* _currentBuffer  = nullptr;
-    int     _index_buffer   = 0;
-    bool    _isStarted      = false;
-    bool    _bufferReady;
-    TaskHandle_t _taskHandle = NULL;
-    double* _fullBufferPtr  = nullptr;
+    double* _currentBuffer      = nullptr;
+    int     _index_buffer       = 0;
+    bool    _isStarted          = false;
+    TaskHandle_t _taskHandle    = NULL;
+    double* _fullBufferPtr      = nullptr;
+
+    /* Handle de la tâche TaskManager — notifiée directement quand un buffer est plein.
+       Remplace le flag _bufferReady + poll toutes les 50 ms. */
+    TaskHandle_t _storageTaskHandle = NULL;
 
 
     /*************************************************************Tare — zérotage par voie ************************************************************************/
-    /*  _offsets[i] : offset capturé sur la voie i (même unité que value_in_mV, c'est-à-dire en Volts selon getQuantum)
-        _tareRequested : flag levé depuis la tâche HTTP (loop()), consommé dans _run()
-        _tareActive    : true dès qu'au moins un tare a été effectué  */
     double          _offsets[NB_CHANNELS];              // Un offset par jauge
     volatile bool   _tareRequested;                     // Demande de capture (cross-task → volatile)
     volatile bool   _tareActive;                        // Soustraction active ou non
+
+    /*************************************************************Sélection capteurs + mode SD ********************************************************************/
+
+    uint8_t         _activeMask;                        // Masque des capteurs actifs
+    bool            _recordToSD;                        // Enregistrement SD activé ou non
 
 
 public:
@@ -61,8 +64,13 @@ public:
 
     void    set_sampling_Period(uint32_t value);
 
+    /* setAllSPS() : applique un code registre DRATE à tous les ADS1256 enregistrés.                         */
+    void    setAllSPS(uint8_t drate);
+
+    /* setStorageTaskHandle() — enregistre le handle de la tâche TaskManager                                       */
+    void    setStorageTaskHandle(TaskHandle_t h) { _storageTaskHandle = h; }
+
     double* getBufferReady();
-    bool    isBufferReady();
     int     getBufferSize();
 
     /*************************************************************API Tare (appelée depuis WiFiManager) ***********************************************************/
@@ -74,6 +82,10 @@ public:
     void    resetTare();
     bool    isTareActive()  const { return _tareActive; }
     const double* getOffsets() const { return _offsets; }
+
+    /*************************************************************API Selection capteurs ***************************************************************************/
+    uint8_t getActiveMask()        const;
+    int     getActiveSensorCount() const;
 
 
 private:

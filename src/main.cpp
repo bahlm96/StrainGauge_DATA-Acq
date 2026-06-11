@@ -1,128 +1,107 @@
 /*****************************************************************************************************************************************************************************/
 /********************************************* Auteur                           : Halim BALA                      ************************************************************/
 /********************************************* Fichier                          : Main.cpp                        ************************************************************/
-/********************************************* Description                      : Creation d'objets et initialisation***********************************************************/
-/********************************************* Date de création                 : 03/03/2026                      ************************************************************/
-<<<<<<< HEAD
-/********************************************* Date de dernière modification    : 21/05/2026                      ************************************************************/
-=======
-/********************************************* Date de dernière modification    : 21/04/2026                      ************************************************************/
->>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
-
-/* Changelog :
-    v0.2.0  --> Ajout de WifiManager::setInputReaderManager() pour brancher les routes /tare, /resetTare, /tareStatus
-*/
+/********************************************* Date de dernière modification    : 02/06/2026                      ************************************************************/
 
 #include <Arduino.h>
 #include <main.hpp>
 #include <BUSspi.hpp>
 #include <TaskManager.hpp>
 #include <ADS1256.hpp>
-#include <LittleFS.h>
 #include <WebServer.h>
 #include "WiFiManager.hpp"
+#include "ButtonManager.hpp"
 #include <WiFi.h>
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
-<<<<<<< HEAD
 #include <esp_wifi.h>
-=======
->>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
+#include <SD.h>
 
-
-#define SAMPLING_PERIOD  10          // Période de lecture FreeRTOS (ms)
-#define SPEED_MONITOR    115200
+#define SAMPLING_PERIOD  10
 #define Vexc             5.0
 
-const char* filename = "/cardSD.csv";
-<<<<<<< HEAD
-#define BUTTON_PROTECTOR 2
 WebServer server(80);
 
-=======
-#define BUTTON_PROTECTOR 34
-
-WebServer server(80);
-
->>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
-/* ── Bus SPI ────────────────────────────────────────────────────────────── */
 SPIClass vspi(VSPI);
 SPIClass hspi(HSPI);
 
-/* ── Objets métier ──────────────────────────────────────────────────────── */
 InputReaderManager inputReaderManager(SAMPLING_PERIOD);
-<<<<<<< HEAD
-InputDevice        ads1(&hspi, ADS_1_CS_PIN, ADS_1_DRDY, Vexc, 1000000, ADS1256_DRATE_1000, GAIN_1);
-=======
-InputDevice        ads1(&hspi, ADS_1_CS_PIN, ADS_1_DRDY, Vexc, 1000000, ADS1256_DRATE_500, GAIN_1);
->>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
-CardSD             myCard(&vspi, SD_PIN, "/measures.csv");
+InputDevice        ads1(&hspi, ADS_1_CS_PIN, ADS_1_DRDY, Vexc, 1000000, ADS1256_DRATE_100, GAIN_1);
+CardSD             myCard(&vspi, SD_PIN, "/Acquisition_Folder/measures.csv");
 MemoryManager&     memoryManager = MemoryManager::getInstance();
 TaskManager        taskManager(inputReaderManager, memoryManager);
+ButtonManager      buttonManager;   //contrôle physique LCD + bouton
 
+SemaphoreHandle_t _sdMutex = NULL;
+
+// Tâche HTTP optimisée pour laisser du temps processeur au service Wi-Fi natif de l'ESP32
+void httpServerTask(void* pvParameters) {
+    disableCore0WDT();
+    for (;;) {
+        server.handleClient();
+        vTaskDelay(pdMS_TO_TICKS(2));
+    }
+}
 
 void setup() {
     WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
-<<<<<<< HEAD
-    
-=======
->>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
     Serial.begin(115200);
+    delay(200);
+
+    _sdMutex = xSemaphoreCreateMutex();
 
     pinMode(LED_SAFE_EJECT, OUTPUT);
     digitalWrite(LED_SAFE_EJECT, LOW);
 
-    /* ── LittleFS + WiFi ─────────────────────────────────────────────── */
-    if (!LittleFS.begin(true)) { Serial.println("FS Error"); }
+    /* Bus SPI SD */
+    vspi.begin(VSPI_SCLK, VSPI_MISO, VSPI_MOSI, SD_PIN);
+    if (SD.begin(SD_PIN, vspi)) {
+        if (!SD.exists("/www"))               SD.mkdir("/www");
+        if (!SD.exists("/Acquisition_Folder")) SD.mkdir("/Acquisition_Folder");
+    }
 
+    /* Initialisation du LCD 16x2 */
+    WifiManager::initLCD();
+
+    /* LED témoin acquisition (GPIO à assigner — clignote pendant l'enregistrement) */
+    WifiManager::initAcqLed();
+
+    /* Contrôle physique — bouton + LCD (démarre après initLCD) */
+    buttonManager.begin();
+
+    /* Configuration Wi-Fi */
+    WifiManager::setSdMutex(_sdMutex);
     WifiManager::startAP("TEST_TEST", "");
-<<<<<<< HEAD
-    esp_wifi_set_ps(WIFI_PS_NONE);                              // pour que le wifi ne se met pas en mode économie d'énergie ( s'eteindre à chaque fois)
+    esp_wifi_set_ps(WIFI_PS_NONE); // Performance Wi-Fi maximale, pas de mode veille
     WifiManager::setInputReaderManager(&inputReaderManager);
-=======
-
-    /* ── Injection de dépendance : doit être fait AVANT begin() ────────
-       Permet aux routes /tare, /resetTare et /tareStatus d'accéder
-       directement à inputReaderManager sans variable globale externe.  */
-    WifiManager::setInputReaderManager(&inputReaderManager);
-
->>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
     WifiManager::begin(server);
     server.begin();
 
-    /* ── Bus SPI ─────────────────────────────────────────────────────── */
-    vspi.begin(VSPI_SCLK, VSPI_MISO, VSPI_MOSI, SD_PIN);
+    // Serveur HTTP sur le Cœur 0 (partagé avec le Wi-Fi stack)
+    xTaskCreatePinnedToCore(httpServerTask, "HTTPTask", 8192, NULL, 4, NULL, 0);
+
+    /* Bus HSPI ADS1256 */
     hspi.begin(HSPI_SCLK, HSPI_MISO, HSPI_MOSI, ADS_1_CS_PIN);
     ads1.begin();
 
-    /* ── Démarrage des tâches FreeRTOS ───────────────────────────────── */
+    /* Tâches critiques d'acquisition et d'écriture déplacées sur le Cœur 1 */
+    memoryManager.setSdMutex(_sdMutex);
     memoryManager.addDevice(&myCard);
     inputReaderManager.addDevice(&ads1);
-    inputReaderManager.begin();
-    memoryManager.begin();
-    taskManager.begin();
+    
+    inputReaderManager.begin(); // Démarre ReadyTask sur Cœur 1
+    memoryManager.begin();      // Démarre SDTask sur Cœur 1
+    taskManager.begin();        // Démarre TaskManagerTask sur Cœur 1
 
-    /* ── Configuration ADS1256 ───────────────────────────────────────── */
-<<<<<<< HEAD
-    ads1.Set_ADS1256_SPS(ADS1256_DRATE_1000);
-    WifiManager::updateSPS(ADS1256_DRATE_1000);
-=======
-    ads1.Set_ADS1256_SPS(ADS1256_DRATE_30000);
-    WifiManager::updateSPS(ADS1256_DRATE_30000);
->>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
+    ads1.Set_ADS1256_SPS(ADS1256_DRATE_100);
+    WifiManager::updateSPS(ADS1256_DRATE_100);
 
-    /* ── Auto-calibration ────────────────────────────────────────────── */
     digitalWrite(CS_PIN, LOW);
-    hspi.transfer(0xF0);    // Commande SELFCAL
+    hspi.transfer(ADS1256_IO_DIR_MASK);
     digitalWrite(CS_PIN, HIGH);
 }
 
-
 void loop() {
-<<<<<<< HEAD
-   server.handleClient();
-=======
-    server.handleClient();
->>>>>>> 18d4e9bfce90d5fe4981888d494d41792f0cd29e
-    vTaskDelay(pdMS_TO_TICKS(2));
+    // pour ne pas consommer de CPU
+    vTaskDelay(pdMS_TO_TICKS(5000));
 }
