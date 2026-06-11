@@ -11,15 +11,15 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-/* ── Broches ──────────────────────────────────────────────────────────────── */
+/*Broches*/
 #define BTN_PREV     22
 #define BTN_SUSPEND  34
 #define BTN_STOP     21
 #define BTN_NEXT     15
 
-/* ── Timing anti-rebond / appui long ─────────────────────────────────────── */
+/* Timing anti-rebond / appui long*/
 #define DEBOUNCE_MS   50
-#define LONG_PRESS_MS 800
+#define LONG_PRESS_MS 800  // en ms
 
 class ButtonManager {
 public:

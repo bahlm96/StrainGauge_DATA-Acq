@@ -7,7 +7,7 @@
 using State = ButtonManager::State;
 #include "WiFiManager.hpp"
 
-/* ── Index boutons dans les tableaux ──────────────────────────────────────── */
+/* Index boutons dans les tableaux*/
 #define IDX_PREV    0
 #define IDX_SUSPEND 1
 #define IDX_STOP    2
@@ -15,7 +15,6 @@ using State = ButtonManager::State;
 
 static const uint8_t BTN_PINS[4] = { BTN_PREV, BTN_SUSPEND, BTN_STOP, BTN_NEXT };
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
 
 ButtonManager::ButtonManager()
     : _state(State::MENU), _cursor(0), _nextPressStart(0), _nextHeld(false)
@@ -27,12 +26,12 @@ ButtonManager::ButtonManager()
     }
 }
 
-/* ── begin() ─────────────────────────────────────────────────────────────── */
+/*begin() */
 void ButtonManager::begin() {
     for (uint8_t pin : BTN_PINS) {
-        // GPIO 34 et 35 sont input-only sur ESP32 → pas de pull-up interne possible
+       
         if (pin == 34 || pin == 35) {
-            pinMode(pin, INPUT);   // pull-up externe obligatoire sur ces pins
+            pinMode(pin, INPUT);   
         } else {
             pinMode(pin, INPUT_PULLUP);
         }
@@ -49,19 +48,19 @@ void ButtonManager::begin() {
     );
 }
 
-/* ── Entrée de la tâche ───────────────────────────────────────────────────── */
+/*  Entrée de la tâche*/
 void ButtonManager::taskEntry(void* pv) {
     ((ButtonManager*)pv)->run();
 }
 
-/* ── Boucle principale ────────────────────────────────────────────────────── */
+/*Boucle principale*/
 void ButtonManager::run() {
     _drawMenu();   // affichage initial
 
     for (;;) {
         vTaskDelay(pdMS_TO_TICKS(20));   // période de polling 20 ms
 
-        /* ── Lecture et dispatch des boutons ─────────────────────────── */
+        /*Lecture et dispatch des boutons */
         if (_read(BTN_PREV,    IDX_PREV))    _onPrev();
         if (_read(BTN_SUSPEND, IDX_SUSPEND)) _onSuspend();
         if (_read(BTN_STOP,    IDX_STOP))    _onStop();
@@ -86,7 +85,7 @@ void ButtonManager::run() {
     }
 }
 
-/* ── Lecture filtrée d'un bouton (front descendant) ─────────────────────── */
+/*Lecture d'un bouton */
 /*
   Retourne true UNE SEULE FOIS par appui (front descendant filtré).
   Niveau bas = appui (INPUT_PULLUP ou pull-up externe).
@@ -107,15 +106,12 @@ bool ButtonManager::_read(uint8_t pin, uint8_t idx) {
     return false;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   Handlers boutons
-   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── PREV ────────────────────────────────────────────────────────────────── */
+/* Button PREV  */
 void ButtonManager::_onPrev() {
     switch (_state) {
         case State::MENU:
-            // Pas d'écran précédent — rien à faire (ou déplacer curseur en arrière)
+            // Pas d'écran précédent — rien à faire 
             if (_cursor > 0) { _cursor--; _drawMenu(); }
             break;
         case State::RUNNING:
@@ -125,7 +121,7 @@ void ButtonManager::_onPrev() {
     }
 }
 
-/* ── SUSPEND ─────────────────────────────────────────────────────────────── */
+/* Button SUSPEND */
 void ButtonManager::_onSuspend() {
     switch (_state) {
         case State::MENU:
@@ -152,24 +148,24 @@ void ButtonManager::_onSuspend() {
     }
 }
 
-/* ── STOP ─────────────────────────────────────────────────────────────────── */
+/* Button  STOP*/
 void ButtonManager::_onStop() {
     if (_state == State::RUNNING || _state == State::PAUSED) {
         _stopAcq();
     }
-    // En State::MENU : ignoré
+    
 }
 
-/* ── NEXT (appui court) ───────────────────────────────────────────────────── */
+/* Button NEXT (appui court)*/
 void ButtonManager::_onNext() {
     if (_state == State::MENU) {
-        _cursor = (_cursor + 1) % 4;   // J1 → J2 → J3 → J4 → J1
+        _cursor = (_cursor + 1) % 4;   // J1  J2  J3 J4  J1
         _drawMenu();
     }
-    // En RUNNING / PAUSED : ignoré
+    
 }
 
-/* ── NEXT (appui long ≥ 800 ms) → lancer acquisition ─────────────────────── */
+/* NEXT (appui long ≥ 800 ms) : lancer acquisition  */
 void ButtonManager::_onNextLong() {
     if (_state == State::MENU) {
         /* Vérifie qu'au moins un capteur est actif */
@@ -184,9 +180,7 @@ void ButtonManager::_onNextLong() {
     }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   Actions SD
-   ═══════════════════════════════════════════════════════════════════════════ */
+/* Actions SD */
 
 void ButtonManager::_startAcq() {
     uint8_t mask = _buildMask();
@@ -204,7 +198,7 @@ void ButtonManager::_stopAcq() {
     Serial.println("[BTN] Acquisition arretee");
 }
 
-/* ── Construit le masque uint8_t depuis _active[] ────────────────────────── */
+/* Construit le masque uint8_t depuis _active[] */
 uint8_t ButtonManager::_buildMask() const {
     uint8_t m = 0;
     for (int i = 0; i < 4; i++) {
@@ -213,22 +207,9 @@ uint8_t ButtonManager::_buildMask() const {
     return m;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   Affichage LCD
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/*
-  Ligne 0 : "J1[x] J2[x] J3   "   (x = actif, espace = inactif)
-  Ligne 1 : "J4    >Lancer<   "    (curseur sur J4)
-
-  Disposition 4 capteurs sur 2 lignes (2 par ligne) :
-    Ligne 0 → J1 J2
-    Ligne 1 → J3 J4
-
-  Chaque cellule occupe 8 caractères : "J1[x]   " ou ">J1[x]< "
-*/
+/* Affichage LCD */
 void ButtonManager::_drawMenu() {
-    /* Formate une cellule capteur : ">J1[x]< " si curseur, "J1[x]  " sinon */
+    /* Formate une cellule capteur */
     auto cell = [&](uint8_t idx) -> String {
         bool cur = (_cursor == idx);
         bool act = _active[idx];
