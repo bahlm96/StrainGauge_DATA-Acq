@@ -5,7 +5,18 @@
 /********************************************* Date de création(fr)             : 04/03/2026                      ************************************************************/
 /********************************************* Date de dernière modification    : 05/06/2026                      ************************************************************/
 
-
+/* Changelog :
+    v0.2.0  --> Ajout du système de Tare / Zérotage par voie (requestTare, resetTare, getOffsets)
+    v0.3.0  --> Découplage SD / WiFi :
+                  - Suppression de isBufferReady() / _bufferReady (poll toutes les 50 ms)
+                  - Ajout de _storageTaskHandle : _switchBuffer() notifie directement
+                    le TaskManager via xTaskNotifyGive() → zéro délai, zéro CPU inutile
+                  - setStorageTaskHandle() appelé par TaskManager au démarrage de sa tâche
+    v0.4.0  --> Sélection capteurs + mode SD :
+                  - Membres _activeMask (uint8_t) et _recordToSD (bool) ajoutés
+                  - getActiveMask() : retourne le masque courant (pour TaskManager -> en-tête CSV)
+                  - getActiveSensorCount() : nombre de bits actifs dans le masque
+*/
 
 #ifndef INPUTREADERMANAGER_HPP
 #define INPUTREADERMANAGER_HPP
@@ -45,14 +56,24 @@ private:
 
 
     /*************************************************************Tare — zérotage par voie ************************************************************************/
+    /*  _offsets[i] : offset capturé sur la voie i (même unité que value_in_mV, c'est-à-dire en Volts selon getQuantum)
+        _tareRequested : flag levé depuis la tâche HTTP (loop()), consommé dans _run()
+        _tareActive    : true dès qu'au moins un tare a été effectué  */
     double          _offsets[NB_CHANNELS];              // Un offset par jauge
     volatile bool   _tareRequested;                     // Demande de capture (cross-task → volatile)
     volatile bool   _tareActive;                        // Soustraction active ou non
 
     /*************************************************************Sélection capteurs + mode SD ********************************************************************/
-
+    /*  _activeMask  : bits 0-3 → capteurs J1-J4 actifs (ex: 0b0001 = J1 seul, 0x0F = tous)
+                       Lu depuis WifiManager::getSensorMask() à chaque cycle de _run().
+        _recordToSD  : true si mode "both" ou "sd seule" — false en mode "visu seule".
+                       Lu depuis WifiManager::isRecordingSD() à chaque cycle de _run().    */
     uint8_t         _activeMask;                        // Masque des capteurs actifs
     bool            _recordToSD;                        // Enregistrement SD activé ou non
+
+    /* ── LED acquisition (GPIO LED_ACQ_PIN) ──────────────────────────── */
+    bool            _ledState       = false;            // Niveau courant de la LED
+    uint16_t        _ledToggleCount = 0;                // Compteur de cycles pour le toggle
 
 
 public:
@@ -64,10 +85,13 @@ public:
 
     void    set_sampling_Period(uint32_t value);
 
-    /* setAllSPS() : applique un code registre DRATE à tous les ADS1256 enregistrés.                         */
+    /* setAllSPS() : applique un code registre DRATE à tous les ADS1256 enregistrés.
+       Appelé depuis WiFiManager via la route POST /setSPS.                          */
     void    setAllSPS(uint8_t drate);
 
-    /* setStorageTaskHandle() — enregistre le handle de la tâche TaskManager                                       */
+    /* setStorageTaskHandle() — enregistre le handle de la tâche TaskManager.
+       Doit être appelé depuis TaskManager::run() avant la boucle principale,
+       via xTaskGetCurrentTaskHandle().                                        */
     void    setStorageTaskHandle(TaskHandle_t h) { _storageTaskHandle = h; }
 
     double* getBufferReady();

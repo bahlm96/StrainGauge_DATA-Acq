@@ -27,7 +27,11 @@
 
 /************************** Bouton physique (ButtonManager) ******************/
 
-#define BTN_PIN  15
+#define BTN_PIN      15
+
+/************************** LED Acquisition (clignote pendant la mesure) *****/
+
+#define LED_ACQ_PIN  22
 
 //extern SPIClass vspi;                 // éviter de crée un bus spi plusieurs fois de suite, externe pour dire que le bus est déja crée dans un autre fichier ailleur
 

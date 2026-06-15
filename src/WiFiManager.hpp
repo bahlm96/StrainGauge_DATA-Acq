@@ -64,7 +64,7 @@ public:
     static bool  isRecordingSD()   { return _isRecordingSD; }
     static uint8_t getSensorMask() { return _sensorMask;    }
 
-    /* ── API ButtonManager (contrôle physique) ──────────────────────────── */
+    /* API ButtonManager*/
     /* Écriture directe du masque depuis le bouton physique (thread-safe :   *
      * uint8_t est atomique sur ESP32 Xtensa).                               */
     static void setSensorMask(uint8_t mask) { _sensorMask    = mask & 0x0F; }

@@ -12,8 +12,8 @@
 #include "WiFiManager.hpp"
 #include "ButtonManager.hpp"
 #include <WiFi.h>
-#include "soc/soc.h"
-#include "soc/rtc_cntl_reg.h"
+//#include "soc/soc.h"
+//#include "soc/rtc_cntl_reg.h"
 #include <esp_wifi.h>
 #include <SD.h>
 
@@ -34,7 +34,7 @@ ButtonManager      buttonManager;   //contrôle physique LCD + bouton
 
 SemaphoreHandle_t _sdMutex = NULL;
 
-// Tâche HTTP optimisée pour laisser du temps processeur au service Wi-Fi natif de l'ESP32
+// Tâche HTTP optimisée pour laisser du temps processeur au service Wi-Fi de l'ESP32
 void httpServerTask(void* pvParameters) {
     disableCore0WDT();
     for (;;) {
@@ -44,7 +44,7 @@ void httpServerTask(void* pvParameters) {
 }
 
 void setup() {
-    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
+    //WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0);
     Serial.begin(115200);
     delay(200);
 
@@ -56,7 +56,6 @@ void setup() {
     /* Bus SPI SD */
     vspi.begin(VSPI_SCLK, VSPI_MISO, VSPI_MOSI, SD_PIN);
     if (SD.begin(SD_PIN, vspi)) {
-        if (!SD.exists("/www"))               SD.mkdir("/www");
         if (!SD.exists("/Acquisition_Folder")) SD.mkdir("/Acquisition_Folder");
     }
 
@@ -78,13 +77,13 @@ void setup() {
     server.begin();
 
     // Serveur HTTP sur le Cœur 0 (partagé avec le Wi-Fi stack)
-    xTaskCreatePinnedToCore(httpServerTask, "HTTPTask", 8192, NULL, 4, NULL, 0);
+    xTaskCreatePinnedToCore(httpServerTask, "HTTPTask", 8192, NULL, 1, NULL, 0);
 
     /* Bus HSPI ADS1256 */
     hspi.begin(HSPI_SCLK, HSPI_MISO, HSPI_MOSI, ADS_1_CS_PIN);
     ads1.begin();
 
-    /* Tâches critiques d'acquisition et d'écriture déplacées sur le Cœur 1 */
+    /* Tâches d'acquisition et d'écriture déplacées sur le Cœur 1 */
     memoryManager.setSdMutex(_sdMutex);
     memoryManager.addDevice(&myCard);
     inputReaderManager.addDevice(&ads1);
@@ -96,12 +95,13 @@ void setup() {
     ads1.Set_ADS1256_SPS(ADS1256_DRATE_100);
     WifiManager::updateSPS(ADS1256_DRATE_100);
 
+    // pour auto_calibration du l'ADS1256
     digitalWrite(CS_PIN, LOW);
     hspi.transfer(ADS1256_IO_DIR_MASK);
     digitalWrite(CS_PIN, HIGH);
 }
 
 void loop() {
-    // pour ne pas consommer de CPU
+   
     vTaskDelay(pdMS_TO_TICKS(5000));
 }
