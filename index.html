@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LIEBHERR — Visualisation Jauges</title>
+
+  <link rel="stylesheet" href="/uPlot.min.css"
+        onerror="this.href='https://cdn.jsdelivr.net/npm/uplot@1.6.24/dist/uPlot.min.css'">
+  <script>
+    (function() {
+      var s = document.createElement('script');
+      s.src = '/uPlot.iife.min.js';
+      s.onerror = function() {
+        var fb = document.createElement('script');
+        fb.src = 'https://cdn.jsdelivr.net/npm/uplot@1.6.24/dist/uPlot.iife.min.js';
+        document.head.appendChild(fb);
+      };
+      document.head.appendChild(s);
+    })();
+  </script>
+
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <header>
+    <div class="menu-wrap" id="menu-wrap">
+      <button class="btn btn-menu" id="btn-menu" title="Menu">
+        <span class="hamburger">
+          <span></span><span></span><span></span>
+        </span>
+      </button>
+      <div class="dropdown" id="dropdown" hidden>
+
+        <!-- ── Section 1 : Éjecter en toute sécurité ── -->
+        <div class="dropdown-section">
+          <span class="dropdown-label">Éjecter en toute sécurité</span>
+          <button class="dropdown-item" id="btn-eject">
+            <span class="eject-icon">⏏</span>
+            <span id="eject-label">Éjecter la carte SD</span>
+          </button>
+          <button class="dropdown-item dropdown-item--danger" id="btn-eject-reset" style="display:none;">
+            <span class="eject-icon">↺</span>
+            Réactiver l'écriture SD
+          </button>
+        </div>
+
+        <div class="dropdown-divider"></div>
+
+        <!-- ── Section 2 : SD State ── -->
+        <div class="dropdown-section">
+          <span class="dropdown-label">SD State</span>
+          <div class="dropdown-sdstate" id="sd-state-wrap">
+            <div class="sdstate-bar-wrap">
+              <div class="sdstate-bar">
+                <div class="sdstate-fill" id="sd-fill" style="width:0%"></div>
+              </div>
+              <span class="sdstate-pct" id="sd-pct">—</span>
+            </div>
+            <div class="sdstate-detail">
+              <span id="sd-free">—</span> libres &nbsp;·&nbsp; <span id="sd-used">—</span> utilisés sur <span id="sd-total">—</span>
+            </div>
+            <button class="dropdown-item dropdown-item--refresh" id="btn-sd-refresh">
+              <span>↻</span> Actualiser
+            </button>
+          </div>
+        </div>
+
+        <div class="dropdown-divider"></div>
+
+        <!-- ── Section 3 : Configuration ── -->
+        <div class="dropdown-section">
+          <span class="dropdown-label">Configuration</span>
+
+          <div class="config-row">
+            <span class="config-label">Enregistrement SD</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="cfg-record-toggle" checked>
+              <span class="toggle-track">
+                <span class="toggle-thumb"></span>
+              </span>
+              <span class="toggle-state-label" id="cfg-record-label">Actif</span>
+            </label>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <div class="logo-bar"></div>
+    <div>
+      <h1>LIEBHERR <span>Acquisition de données</span></h1>
+    </div>
+    <div class="header-status">
+      <div class="status-dot" id="status-dot"></div>
+      <span class="status-label" id="status-label">Arrêté</span>
+    </div>
+  </header>
+
+  <!-- Bandeau Safe Eject (affiché quand la SD est éjectée) -->
+  <div class="eject-banner" id="eject-banner" style="display:none;">
+    ⏏ Carte SD éjectée en sécurité — vous pouvez la retirer physiquement.
+    <button class="eject-banner-btn" id="btn-banner-reset">↺ Réactiver</button>
+  </div>
+
+  <main>
+
+    <!-- ══ WIZARD SÉLECTION CAPTEURS ══════════════════════════════════════ -->
+    <section class="control-bar wizard-bar" id="wizard-bar">
+
+      <!-- ── Étape 0 : écran d'accueil (état stopped) ─────────────────── -->
+      <div class="wizard-step" id="wz-step0">
+        <div class="wz-idle-text">
+          <span class="wz-idle-title">Prêt</span>
+          <span class="wz-idle-sub">Appuyez sur <strong>Configurer</strong> pour choisir les capteurs à visualiser</span>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-wz-config" id="btn-wz-config">⚙ Configurer</button>
+          <button class="btn btn-dl" id="btn-dl">⬇ Télécharger</button>
+        </div>
+      </div>
+
+      <!-- ── Étape 1 : combien de capteurs ? ──────────────────────────── -->
+      <div class="wizard-step" id="wz-step1" hidden>
+        <div class="wz-step-label">
+          <span class="wz-step-num">1</span>
+          <span class="wz-step-title">Combien de capteurs ?</span>
+        </div>
+        <div class="wz-count-row" id="wz-count-row">
+          <button class="wz-count-btn" data-count="1">1</button>
+          <button class="wz-count-btn" data-count="2">2</button>
+          <button class="wz-count-btn" data-count="3">3</button>
+          <button class="wz-count-btn" data-count="4">4</button>
+          <button class="wz-count-btn wz-count-all" data-count="all">Tous</button>
+        </div>
+        <div class="btn-group wz-nav">
+          <button class="btn btn-wz-back" id="wz1-back">← Annuler</button>
+        </div>
+      </div>
+
+      <!-- ── Étape 2 : quels capteurs ? ───────────────────────────────── -->
+      <div class="wizard-step" id="wz-step2" hidden>
+        <div class="wz-step-label">
+          <span class="wz-step-num">2</span>
+          <span class="wz-step-title">Sélectionner <span id="wz-quota-label">2</span> capteur(s)</span>
+        </div>
+        <div class="wz-ch-row" id="wz-ch-row">
+          <button class="wz-ch-btn" data-ch="0" style="--ch-color:#1A6BBF">
+            <span class="wz-ch-dot"></span>J1
+          </button>
+          <button class="wz-ch-btn" data-ch="1" style="--ch-color:#E05C2A">
+            <span class="wz-ch-dot"></span>J2
+          </button>
+          <button class="wz-ch-btn" data-ch="2" style="--ch-color:#1E9E4E">
+            <span class="wz-ch-dot"></span>J3
+          </button>
+          <button class="wz-ch-btn" data-ch="3" style="--ch-color:#8B3FBF">
+            <span class="wz-ch-dot"></span>J4
+          </button>
+        </div>
+        <div class="wz-ch-hint" id="wz-ch-hint">Sélectionnez 2 capteur(s)</div>
+        <div class="btn-group wz-nav">
+          <button class="btn btn-wz-back" id="wz2-back">← Retour</button>
+          <button class="btn btn-start" id="btn-start" disabled>▶ Visualiser</button>
+        </div>
+      </div>
+
+      <!-- ── Étape 3 : en cours d'acquisition ─────────────────────────── -->
+      <div class="wizard-step" id="wz-step3" hidden>
+        <div class="wz-running-chips" id="wz-running-chips"></div>
+        <div class="btn-group">
+          <button class="btn btn-pause" id="btn-pause" disabled>⏸ Pause</button>
+          <button class="btn btn-wz-stop" id="btn-stop">■ Arrêter</button>
+          <button class="btn btn-dl" id="btn-dl2">⬇ Télécharger</button>
+        </div>
+      </div>
+
+    </section>
+
+    <section class="metrics-row">
+      <div class="metric-card">
+        <span class="m-label">Fréquence active</span>
+        <span class="m-value" id="m-sps">—</span>
+        <span class="m-unit">SPS</span>
+      </div>
+      <div class="metric-card">
+        <span class="m-label">Jauge 1</span>
+        <span class="m-value" id="m-j1">—</span>
+        <span class="m-unit">V</span>
+      </div>
+      <div class="metric-card">
+        <span class="m-label">Jauge 2</span>
+        <span class="m-value" id="m-j2">—</span>
+        <span class="m-unit">V</span>
+      </div>
+      <div class="metric-card">
+        <span class="m-label">Jauge 3</span>
+        <span class="m-value" id="m-j3">—</span>
+        <span class="m-unit">V</span>
+      </div>
+      <div class="metric-card">
+        <span class="m-label">Jauge 4</span>
+        <span class="m-value" id="m-j4">—</span>
+        <span class="m-unit">V</span>
+      </div>
+    </section>
+
+    <section class="charts-grid">
+      <div class="chart-card" id="card-j1">
+        <div class="chart-header">
+          <span class="ch-title"><span class="ch-dot" style="background:#1A6BBF"></span>Jauge 1</span>
+          <span class="ch-current" id="ch-j1">—</span>
+        </div>
+        <div id="chart-j1" class="chart-wrap"></div>
+      </div>
+      <div class="chart-card" id="card-j2">
+        <div class="chart-header">
+          <span class="ch-title"><span class="ch-dot" style="background:#E05C2A"></span>Jauge 2</span>
+          <span class="ch-current" id="ch-j2">—</span>
+        </div>
+        <div id="chart-j2" class="chart-wrap"></div>
+      </div>
+      <div class="chart-card" id="card-j3">
+        <div class="chart-header">
+          <span class="ch-title"><span class="ch-dot" style="background:#1E9E4E"></span>Jauge 3</span>
+          <span class="ch-current" id="ch-j3">—</span>
+        </div>
+        <div id="chart-j3" class="chart-wrap"></div>
+      </div>
+      <div class="chart-card" id="card-j4">
+        <div class="chart-header">
+          <span class="ch-title"><span class="ch-dot" style="background:#8B3FBF"></span>Jauge 4</span>
+          <span class="ch-current" id="ch-j4">—</span>
+        </div>
+        <div id="chart-j4" class="chart-wrap"></div>
+      </div>
+    </section>
+
+    <section class="file-section" id="file-section" style="display:none;">
+      <div class="file-header">
+        <span class="section-label">Fichiers sur carte SD</span>
+        <button class="btn-sm" id="btn-refresh-files">↻ Actualiser</button>
+      </div>
+      <div id="file-list-wrap">
+        <p class="file-empty">Chargement...</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="/dashboard.js"></script>
+</body>
+</html>
